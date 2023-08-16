@@ -5,7 +5,7 @@ echo "[-] Download The Nerd fonts [-]"
 echo "#######################"
 echo "Enter the Nerd Font Name:"  
 read font_name
-if [ -n "$1" ]; then
+if [ -n "$font_name" ]; then
     if [ "$(command -v curl)" ]; then
         echo "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/$font_name.zip"
         curl -OL "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/$font_name.zip"
