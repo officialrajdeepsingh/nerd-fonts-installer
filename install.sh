@@ -26,7 +26,7 @@ select font_name in "${fons_list[@]}" "Quit";
             echo "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/$font_name.zip"
             wget "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/$font_name.zip"
             echo "nzip the $font_name.zip"
-            unzip "$font_name.zip" -d ~/.fonts
+            unzip "$font_name.zip" -d "$HOME/.fonts/$font_name/"
             fc-cache -fv
             echo "done!"
         else
