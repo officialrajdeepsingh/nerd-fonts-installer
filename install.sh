@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 # Select the Nerd Font from https://www.nerdfonts.com/font-downloads
 
 echo "[-] Download The Nerd fonts [-]"
