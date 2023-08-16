@@ -17,7 +17,7 @@ select font_name in "${fons_list[@]}" "Quit";
             echo "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/$font_name.zip"
             curl -OL "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/$font_name.zip"
             echo "nzip the $font_name.zip"
-            unzip "$font_name.zip" -d "~/.fonts/$font_name/"
+            unzip "$font_name.zip" -d "$HOME/.fonts/$font_name/"
             fc-cache -fv
             echo "done!"        
         elif [ "$(command -v wget)" ]; then
