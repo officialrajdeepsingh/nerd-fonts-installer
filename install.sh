@@ -13,7 +13,7 @@ if [ -n "$1" ]; then
     else
         echo "We cannot find the curl and wget command. First, install the curl and wget command, one of them."
     fi
-    unzip JetBrainsMono.zip -d ~/.fonts
+    unzip "$1.zip" -d ~/.fonts
     fc-cache -fv
     echo "done!"
 else
