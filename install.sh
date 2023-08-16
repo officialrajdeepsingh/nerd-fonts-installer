@@ -1,5 +1,6 @@
 #!/bin/bash
 # Select the Nerd Font from https://www.nerdfonts.com/font-downloads
+# Testing with ShellCheck
 
 echo "[-] Download The Nerd fonts [-]"
 echo "#######################"
