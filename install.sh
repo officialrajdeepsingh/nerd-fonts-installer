@@ -35,13 +35,18 @@ select font_name in "${fons_list[@]}" "Quit";
             fc-cache -fv
             echo "done!"
             break
+
         else
+            
             echo "We cannot find the curl and wget command. First, install the curl and wget command, one of them."
             break
+        
         fi
 
     else
+        
         echo "Select the vaild $font_name nerd Font, just type number"
         continue;
+
     fi
 done
