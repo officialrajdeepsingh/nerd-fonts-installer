@@ -17,16 +17,20 @@ select font_name in "${fons_list[@]}" "Quit";
         if [ "$(command -v curl)" ]; then
             echo "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/$font_name.zip"
             curl -OL "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/$font_name.zip"
-            echo "nzip the $font_name.zip"
+            echo "creating fonts folder: ${$HOME/.fonts}"
+            mkdir -p  "$HOME/.fonts"
+            echo "unzip the $font_name.zip"
             unzip "$font_name.zip" -d "$HOME/.fonts/$font_name/"
             fc-cache -fv
             echo "done!"     
-            break   
-        elif [ "$(command -v wget)" ]; then
+            break
 
+        elif [ "$(command -v wget)" ]; then
             echo "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/$font_name.zip"
             wget "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/$font_name.zip"
-            echo "nzip the $font_name.zip"
+            echo "creating fonts folder: ${$HOME/.fonts}"
+            mkdir -p  "$HOME/.fonts"
+            echo "unzip the $font_name.zip"
             unzip "$font_name.zip" -d "$HOME/.fonts/$font_name/"
             fc-cache -fv
             echo "done!"
