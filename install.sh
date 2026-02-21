@@ -45,7 +45,7 @@ select font_name in "${fons_list[@]}" "Quit";
 
     else
         
-        echo "Select the vaild $font_name nerd Font, just type number"
+        echo "Select a valid Nerd Font, just type a number between 1-70."
         continue;
 
     fi
