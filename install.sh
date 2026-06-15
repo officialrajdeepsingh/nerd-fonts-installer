@@ -9,9 +9,13 @@ fons_list=("0xProto" "3270" "AdwaitaMono" "Agave" "AnonymousPro" "Arimo" "Atkins
 PS3="Enter a number: "
 select font_name in "${fons_list[@]}" "Quit";
  do
+    if [[ "$REPLY" =~ ^[0-9]+$ ]] &&
+        (( REPLY >= 1 && REPLY <= 71 )); then
 
-    if [ -n "$font_name" ]; then
-        
+        if [[ "$REPLY" = 71 ]]; then
+            echo "Exiting. Have a nice day"
+            exit 0
+        fi
         echo "Starting download $font_name nerd font"
         
         if [ "$(command -v curl)" ]; then
