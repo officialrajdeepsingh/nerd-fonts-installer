@@ -25,6 +25,7 @@ select font_name in "${fonts_list[@]}" "Quit";
             mkdir -p  "$HOME/.fonts"
             echo "unzip the $font_name.zip"
             unzip "$font_name.zip" -d "$HOME/.fonts/$font_name/"
+            rm -f "$font_name.zip"
             fc-cache -fv
             echo "done!"     
             break
@@ -36,6 +37,7 @@ select font_name in "${fonts_list[@]}" "Quit";
             mkdir -p  "$HOME/.fonts"
             echo "unzip the $font_name.zip"
             unzip "$font_name.zip" -d "$HOME/.fonts/$font_name/"
+            rm -f "$font_name.zip"
             fc-cache -fv
             echo "done!"
             break
