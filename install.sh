@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Select the Nerd Font from https://www.nerdfonts.com/font-downloads
 # Testing with ShellCheck
 
@@ -17,7 +17,7 @@ select font_name in "${fonts_list[@]}" "Quit";
             exit 0
         fi
         echo "Starting download $font_name nerd font"
-        
+
         if [ "$(command -v curl)" ]; then
             echo "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/$font_name.zip"
             curl -OL "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/$font_name.zip"
@@ -27,7 +27,7 @@ select font_name in "${fonts_list[@]}" "Quit";
             unzip "$font_name.zip" -d "$HOME/.fonts/$font_name/"
             rm -f "$font_name.zip"
             fc-cache -fv
-            echo "done!"     
+            echo "done!"
             break
 
         elif [ "$(command -v wget)" ]; then
@@ -43,14 +43,14 @@ select font_name in "${fonts_list[@]}" "Quit";
             break
 
         else
-            
+
             echo "We cannot find the curl and wget command. First, install the curl and wget command, one of them."
             break
-        
+
         fi
 
     else
-        
+
         echo "Select a valid Nerd Font, just type a number between 1-70."
         continue;
 
