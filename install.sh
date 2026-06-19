@@ -165,8 +165,11 @@ preflight_check() {
     TOOL_MISSING_LIST=()
     FONT_LIST_SELECTED=()
 
+    OS_NAME="$(uname -s)"
+
     tool_require_first TOOL_DOWNLOADER curl wget
     tool_require_first TOOL_ARCHIVER tar unzip
+    [[ "${OS_NAME}" == CYGWIN* ]] && tool_require_first TOOL_CYGPATH cygpath
 
     if [ "${#TOOL_MISSING_LIST[@]}" -ne 0 ]; then
         log_error "Missing required tools:"
@@ -180,7 +183,6 @@ preflight_check() {
     FONT_ARCHIVE_EXTENSION="tar.xz"
     [ "${TOOL_ARCHIVER}" = "unzip" ] && FONT_ARCHIVE_EXTENSION="zip"
 
-    OS_NAME="$(uname -s)"
     font_dir_detect
     font_list_set
     TMP_DIR="$(mktemp -d)"
@@ -201,6 +203,9 @@ font_dir_detect() {
         ;;
         Linux)
             FONT_DIR="${XDG_DATA_HOME:-${HOME}/.local/share}/fonts"
+        ;;
+        CYGWIN*)
+            FONT_DIR="$(cygpath -u "${LOCALAPPDATA}")/Microsoft/Windows/Fonts"
         ;;
         *)
             FONT_DIR="${HOME}/.fonts"
