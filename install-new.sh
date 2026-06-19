@@ -10,23 +10,33 @@
 
 set -euo pipefail
 
+readonly LOG_PREFIX="█▓▒░"
+LOG_LEVEL="${LOG_LEVEL:-1}"
+
 trap '[ -n "${TMP_DIR:-}" ] && rm -rf "${TMP_DIR}"' EXIT
 
 main() {
+    local -a args=()
+    local arg
+    for arg in "$@"; do
+        case "${arg}" in
+            --silent|--quiet|-q|-s|/q|/quiet|/s|/silent) LOG_LEVEL=0 ;;
+            *) args+=("${arg}") ;;
+        esac
+    done
+    set -- "${args[@]+"${args[@]}"}"
+
+    greeting
     case "${1:-}" in
-        help|-h|--help|/h|/help)
-            help_show
-        ;;
-        interactive|-i|--interactive|/i|/interactive)
-            main_interactive
-        ;;
-        "")
-            main_interactive
-        ;;
-        *)
-            main_noninteractive "$@"
-        ;;
+        help|-h|--help|/h|/help) help_show; return ;;
     esac
+
+    preflight_check
+    case "${1:-}" in
+        interactive|-i|--interactive|/i|/interactive|"") font_select_interactive ;;
+        *) font_select_noninteractive "$@" ;;
+    esac
+    font_install_all
 }
 
 help_show() {
@@ -54,6 +64,10 @@ Commands:
   interactive, -i, --interactive, /i, /interactive
       Start interactive font selection
 
+  --silent, --quiet, -q, -s, /q, /quiet, /s /silent
+      Suppress informational output (errors still shown).
+      Equivalent to setting LOG_LEVEL=0.
+
 Notes:
   - Font names are case-insensitive.
   - Multiple fonts may be specified as separate arguments or as a
@@ -61,23 +75,24 @@ Notes:
   - If no arguments are provided, interactive mode is started.
   - Set NERD_FONTS_VERSION to pin a release (default: latest).
     Example: NERD_FONTS_VERSION=v3.4.0 $0 Monoid
+  - Set LOG_LEVEL=0 to suppress informational output (same as --quiet).
 EOF
 }
 
-main_interactive() {
-    preflight_check
-    font_select_interactive
-    font_install_all
+greeting() {
+    log_info "Nerd Fonts Installer"
+    log_info "Install Nerd Fonts on Linux and macOS."
+    log_info ""
+    log_info "Github: https://github.com/officialrajdeepsingh/nerd-fonts-installer"
 }
 
-main_noninteractive() {
-    preflight_check
-    font_select_noninteractive "$@"
-    font_install_all
-}
+# shellcheck disable=SC2059
+log_info()  { (( LOG_LEVEL >= 1 )) || return 0; local fmt="$1"; shift; printf "%s ${fmt}\n" "${LOG_PREFIX}" "$@"; }
+# shellcheck disable=SC2059
+log_error() { local fmt="$1"; shift; printf "%s ${fmt}\n" "${LOG_PREFIX}" "$@" >&2; }
 
 quit() {
-    printf "Exiting. Have a nice day\n"
+    log_info "Exiting. Have a nice day"
     exit 0
 }
 
@@ -97,9 +112,9 @@ font_add() {
     local font_canonical
     if font_canonical="$(font_resolve "$1")"; then
         FONT_LIST_SELECTED+=("${font_canonical}")
-        printf "Added: %s\n" "${font_canonical}"
+        log_info "Added: %s" "${font_canonical}"
     else
-        printf "Unknown font: %s (skipping)\n" "$1" >&2
+        log_error "Unknown font: %s (skipping)" "$1"
         return 1
     fi
 }
@@ -123,15 +138,16 @@ preflight_check() {
     TOOL_DOWNLOADER=""
     TOOL_ARCHIVER=""
     TOOL_MISSING_LIST=()
+    FONT_LIST_SELECTED=()
 
     tool_require_first TOOL_DOWNLOADER wget curl
     tool_require_first TOOL_ARCHIVER tar unzip
 
     if [ "${#TOOL_MISSING_LIST[@]}" -ne 0 ]; then
-        printf "Missing required tools:\n"
+        log_info "Missing required tools:"
         local tool_name
         for tool_name in "${TOOL_MISSING_LIST[@]}"; do
-            printf " - %s\n" "${tool_name}"
+            log_info "  - %s" "${tool_name}"
         done
         exit 1
     fi
@@ -163,9 +179,9 @@ font_dir_detect() {
         ;;
         *)
             FONT_DIR="${HOME}/.fonts"
-            printf "Unsupported OS_NAME: %s\nFonts would be installed in %s\n" \
-            "${OS_NAME}" "${FONT_DIR}"
-            read -r -p "Press enter to continue or ctrl+c to exit" </dev/tty
+            log_info "Unsupported OS: %s" "${OS_NAME}"
+            log_info "Fonts will be installed in %s" "${FONT_DIR}"
+            read -r -p "${LOG_PREFIX} Press enter to continue or ctrl+c to exit: " </dev/tty
         ;;
     esac
 
@@ -184,42 +200,36 @@ font_menu_show() {
 
 font_select_interactive() {
     if ! test -r /dev/tty; then
-        printf "No terminal available. Use: %s <FontName> [FontName...]\n" "$0" >&2
+        log_error "No terminal available. Use: %s <FontName> [FontName...]" "$0"
         exit 1
     fi
 
-    FONT_LIST_SELECTED=()
     local menu_quit_index=$(( ${#FONT_LIST_AVAILABLE[@]} + 1 ))
     local menu_reply
 
-    printf "Select Nerd Fonts to install (press Enter with no input when done):\n"
+    log_info "Select Nerd Fonts to install (press Enter with no input when done):"
     font_menu_show
 
-    while read -r -p "Enter a number or press Enter to install: " menu_reply </dev/tty; do
+    while read -r -p "${LOG_PREFIX} Enter a number or press Enter to install: " menu_reply </dev/tty; do
+        [[ "${menu_reply}" == "q" ]] && quit
+
         if [[ -z "${menu_reply}" ]]; then
-            if (( ${#FONT_LIST_SELECTED[@]} == 0 )); then
-                printf "No fonts selected. Please select at least one font.\n"
-                continue
-            fi
-            break
-        fi
-        if [[ ${menu_reply} == "q" ]]; then
-            quit
+            (( ${#FONT_LIST_SELECTED[@]} > 0 )) && break
+            log_info "No fonts selected. Please select at least one font."
+            continue
         fi
 
-        if [[ "${menu_reply}" =~ ^[0-9]+$ ]] && (( menu_reply >= 1 && menu_reply <= menu_quit_index )); then
-            if (( menu_reply == menu_quit_index )); then
-                quit
-            fi
-            font_add "${FONT_LIST_AVAILABLE[$((menu_reply-1))]}"
-        else
-            printf "Select a valid number between 1 and %d.\n" "${menu_quit_index}"
+        if ! [[ "${menu_reply}" =~ ^[0-9]+$ ]] || (( menu_reply < 1 || menu_reply > menu_quit_index )); then
+            log_info "Select a valid number between 1 and %d." "${menu_quit_index}"
+            continue
         fi
+
+        (( menu_reply == menu_quit_index )) && quit
+        font_add "${FONT_LIST_AVAILABLE[$((menu_reply-1))]}"
     done
 }
 
 font_select_noninteractive() {
-    FONT_LIST_SELECTED=()
     local -a font_args
     IFS=', ' read -ra font_args <<<"$*"
     local font_arg
@@ -227,7 +237,7 @@ font_select_noninteractive() {
         font_add "${font_arg}" || true
     done
     if (( ${#FONT_LIST_SELECTED[@]} == 0 )); then
-        printf "No valid fonts selected. Exiting.\n" >&2
+        log_error "No valid fonts selected. Exiting."
         exit 1
     fi
 }
@@ -238,7 +248,13 @@ file_download() {
 
     case "${TOOL_DOWNLOADER}" in
         curl) curl -fsSL -o "${file_out_path}" "${file_url}" ;;
-        wget) wget -nv -O "${file_out_path}" "${file_url}" ;;
+        wget)
+            if (( LOG_LEVEL >= 1 )); then
+                wget -nv -O "${file_out_path}" "${file_url}"
+            else
+                wget -q -O "${file_out_path}" "${file_url}"
+            fi
+            ;;
     esac
 }
 
@@ -273,7 +289,7 @@ font_install() {
     [ "${OS_NAME}" = "Darwin" ] && font_dest_dir="${FONT_DIR}"
 
     mkdir -p "${font_dest_dir}"
-    printf "Installing font %s in %s\n" "${font_name}" "${font_dest_dir}"
+    log_info "Installing font %s in %s" "${font_name}" "${font_dest_dir}"
 
     find "${font_extract_dir}" \( -name "*.ttf" -o -name "*.otf" \) -exec cp {} "${font_dest_dir}/" \;
 }
@@ -284,18 +300,18 @@ font_install_all() {
     for font_name in "${FONT_LIST_SELECTED[@]}"; do
         font_url="${FONT_URL_BASE}/${font_name}.${FONT_ARCHIVE_EXTENSION}"
         if ! { font_download "${font_name}" "${font_url}" && font_install "${font_name}"; }; then
-            printf "Failed: %s (skipping)\n" "${font_name}" >&2
+            log_error "Failed: %s (skipping)" "${font_name}"
             font_failed_count=$(( font_failed_count + 1 ))
             continue
         fi
     done
 
     if command_exists fc-cache; then
-        printf "Rebuilding font cache:\n"
+        log_info "Rebuilding font cache"
         fc-cache -f
     fi
 
-    (( font_failed_count > 0 )) && printf "%d font(s) failed to install.\n" "${font_failed_count}" >&2
+    (( font_failed_count > 0 )) && log_error "%d font(s) failed to install." "${font_failed_count}"
     return 0
 }
 
