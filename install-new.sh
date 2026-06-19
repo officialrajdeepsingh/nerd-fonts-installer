@@ -168,7 +168,6 @@ require_one() {
 preflight_check() {
     require_one DOWNLOADER wget curl
     require_one ARCHIVER tar unzip
-
     if [ "${#MISSING_TOOLS[@]}" -ne 0 ]; then
         printf "Missing required tools:\n"
         for t in "${MISSING_TOOLS[@]}"; do
@@ -176,6 +175,7 @@ preflight_check() {
         done
         exit 1
     fi
+    detect_font_dir
 }
 
 detect_font_dir() {
@@ -212,7 +212,6 @@ interactive_select_font_to_install() {
         printf "No terminal available. Use: %s <FontName> [FontName...]\n" "$0" >&2
         exit 1
     fi
-    detect_font_dir
 
     FONTS_TO_INSTALL=()
     local quit_index=$(( ${#FONTS_LIST[@]} + 1 ))
@@ -246,7 +245,6 @@ interactive_select_font_to_install() {
 
 non_interactive_select_font_to_install() {
     FONTS_TO_INSTALL=()
-    detect_font_dir
     local token
     for token in $(printf '%s' "$*" | tr ',' ' '); do
         add_font "${token}" || true
@@ -257,36 +255,37 @@ non_interactive_select_font_to_install() {
     fi
 }
 
+download_file() {
+    local url="$1"
+    local out="$2"
+
+    case "$DOWNLOADER" in
+        curl) curl -fsSL -o "$out" "$url" ;;
+        wget) wget -nv -O "$out" "$url" ;;
+    esac
+}
+
+extract_archive() {
+    local archive="$1"
+    local dir="$2"
+
+    case "$ARCHIVER" in
+        tar) tar -xf "$archive" -C "$dir" ;;
+        unzip) unzip -qq -o "$archive" -d "$dir" ;;
+    esac
+}
+
 download_font() {
     local font_name="$1"
     local font_url="$2"
+
     local archive="${TMP_DIR}/${font_name}.${FONT_ARCHIVE_EXTENSION}"
     local extract_dir="${TMP_DIR}/${font_name}"
 
-    mkdir -p "${extract_dir}"
+    mkdir -p "$extract_dir"
 
-    printf "downloader app is %s\n" "${DOWNLOADER}"
-    printf "Downloading font %s from url %s\n" "${font_name}" "${font_url}"
-
-    if [ "${DOWNLOADER}" = "curl" ]; then
-        curl -fsSL -o "${archive}" "${font_url}"
-    else
-        wget -nv -O "${archive}" "${font_url}"
-        fi || {
-        printf "Failed to download %s\n" "${font_name}" >&2
-        exit 1
-    }
-
-    printf "archiver app is %s\n" "${ARCHIVER}"
-
-    if [ "${ARCHIVER}" = "tar" ]; then
-        tar -xf "${archive}" -C "${extract_dir}"
-    else
-        unzip -qq -o "${archive}" -d "${extract_dir}"
-        fi || {
-        printf "Failed to unpack %s\n" "${font_name}" >&2
-        exit 1
-    }
+    download_file "$font_url" "$archive" || exit 1
+    extract_archive "$archive" "$extract_dir" || exit 1
 }
 
 install_font(){
@@ -310,7 +309,6 @@ install_font(){
 }
 download_and_install () {
     [ "${ARCHIVER}" = "unzip" ] && FONT_ARCHIVE_EXTENSION="zip"
-    detect_font_dir
 
     for FONT_NAME in "${FONTS_TO_INSTALL[@]}"; do
         FONT_URL="${FONT_URL_BASE}/${FONT_NAME}.${FONT_ARCHIVE_EXTENSION}"
