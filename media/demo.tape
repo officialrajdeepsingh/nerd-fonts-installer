@@ -1,5 +1,5 @@
 Output media/install-nerd-font.gif
-Set Theme "nord-light"
+Set Theme "nord"
 Set Margin 20
 Set Padding 10
 Set MarginFill "#b48ead"

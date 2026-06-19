@@ -6,6 +6,21 @@ set -euo pipefail
 readonly LOG_PREFIX="█▓▒░"
 LOG_LEVEL="${LOG_LEVEL:-1}"
 
+setup_colors() {
+    USE_COLOR="${USE_COLOR:-auto}"
+
+    CLR_INFO="" CLR_SUCCESS="" CLR_ERROR="" CLR_RESET=""
+    if [[ "${USE_COLOR}" == "auto" ]]; then
+        [[ -t 1 ]] && USE_COLOR=1 || USE_COLOR=0
+    fi
+    if (( USE_COLOR )); then
+        CLR_INFO="\033[0;36m"
+        CLR_SUCCESS="\033[0;32m"
+        CLR_ERROR="\033[0;31m"
+        CLR_RESET="\033[0m"
+    fi
+}
+
 trap '[ -n "${TMP_DIR:-}" ] && rm -rf "${TMP_DIR}"' EXIT
 
 main() {
@@ -14,11 +29,14 @@ main() {
     for arg in "$@"; do
         case "${arg}" in
             --silent|--quiet|-q|-s|/q|/quiet|/s|/silent) LOG_LEVEL=0 ;;
+            --color|/color) USE_COLOR=1 ;;
+            --no-color|/no-color) USE_COLOR=0 ;;
             *) args+=("${arg}") ;;
         esac
     done
     set -- "${args[@]+"${args[@]}"}"
 
+    setup_colors
     greeting
     case "${1:-}" in
         help|-h|--help|/h|/help) help_show; return ;;
@@ -60,6 +78,14 @@ Commands:
       Suppress informational output (errors still shown).
       Equivalent to setting LOG_LEVEL=0.
 
+  --color, /color
+      Force colored output even when not writing to a terminal.
+      Equivalent to setting USE_COLOR=1.
+
+  --no-color, /no-color
+      Disable colored output.
+      Equivalent to setting USE_COLOR=0.
+
 Notes:
   - Font names are case-insensitive.
   - Multiple fonts may be specified as separate arguments or as a
@@ -81,9 +107,11 @@ greeting() {
 }
 
 # shellcheck disable=SC2059
-log_info()  { (( LOG_LEVEL >= 1 )) || return 0; local fmt="$1"; shift; printf "%s ${fmt}\n" "${LOG_PREFIX}" "$@"; }
+log_info()    { (( LOG_LEVEL >= 1 )) || return 0; local fmt="$1"; shift; printf "${CLR_INFO}%s ${fmt}${CLR_RESET}\n" "${LOG_PREFIX}" "$@"; }
 # shellcheck disable=SC2059
-log_error() { local fmt="$1"; shift; printf "%s ${fmt}\n" "${LOG_PREFIX}" "$@" >&2; }
+log_success() { (( LOG_LEVEL >= 1 )) || return 0; local fmt="$1"; shift; printf "${CLR_SUCCESS}%s ${fmt}${CLR_RESET}\n" "${LOG_PREFIX}" "$@"; }
+# shellcheck disable=SC2059
+log_error()   { local fmt="$1"; shift; printf "${CLR_ERROR}%s ${fmt}${CLR_RESET}\n" "${LOG_PREFIX}" "$@" >&2; }
 
 quit() {
     log_info "Exiting. Have a nice day"
@@ -141,10 +169,10 @@ preflight_check() {
     tool_require_first TOOL_ARCHIVER tar unzip
 
     if [ "${#TOOL_MISSING_LIST[@]}" -ne 0 ]; then
-        log_info "Missing required tools:"
+        log_error "Missing required tools:"
         local tool_name
         for tool_name in "${TOOL_MISSING_LIST[@]}"; do
-            log_info "  - %s" "${tool_name}"
+            log_error "  - %s" "${tool_name}"
         done
         exit 1
     fi
@@ -306,6 +334,7 @@ font_install_all() {
             font_failed_count=$(( font_failed_count + 1 ))
             continue
         fi
+        log_success "Installed: %s" "${font_name}"
     done
 
     if command_exists fc-cache; then
@@ -314,6 +343,7 @@ font_install_all() {
     fi
 
     (( font_failed_count > 0 )) && log_error "%d font(s) failed to install." "${font_failed_count}"
+    (( font_failed_count == 0 )) && log_success "All fonts installed successfully."
     return 0
 }
 
