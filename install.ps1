@@ -6,12 +6,13 @@
 # Enable strict mode for better error handling
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+$TempDir = $null
 
 # Function to write colored output
 function Write-ColorOutput {
     param(
         [string]$Message,
-        [string]$ForegroundColor = "White"
+        [System.ConsoleColor]$ForegroundColor = [System.ConsoleColor]::White
     )
     Write-Host $Message -ForegroundColor $ForegroundColor
 }
@@ -34,6 +35,12 @@ function Write-InfoMessage {
     Write-ColorOutput "INFO: $Message" "Cyan"
 }
 
+# Function to write warning messages
+function Write-WarningMessage {
+    param([string]$Message)
+    Write-ColorOutput "WARNING: $Message" "Yellow"
+}
+
 # Function to clean up temporary files
 function Remove-TempFiles {
     param([string]$TempDir)
@@ -44,7 +51,7 @@ function Remove-TempFiles {
         }
     }
     catch {
-        Write-Host "Warning: Could not clean up temporary files: $_" -ForegroundColor Yellow
+        Write-WarningMessage "Could not clean up temporary files: $_"
     }
 }
 
@@ -57,7 +64,7 @@ function Register-WindowsFonts {
         $FontFiles = Get-ChildItem -Path $FontsPath -Include "*.ttf", "*.otf" -Recurse
         
         if ($FontFiles.Count -eq 0) {
-            Write-Host "Warning: No font files found to register" -ForegroundColor Yellow
+            Write-WarningMessage "No font files found to register"
             return
         }
 
@@ -69,17 +76,17 @@ function Register-WindowsFonts {
         
         foreach ($FontFile in $FontFiles) {
             try {
-                $FontsFolder.CopyHere($FontFile.FullName, 0x10)  # 0x10 = overwrite existing
+                $FontsFolder.CopyHere($FontFile.FullName, 0x14)  # 0x14 = FOF_NO_CONFIRMATION | FOF_SILENT
             }
             catch {
-                # Silent fail for individual font registration
+                Write-WarningMessage "Failed to register font '$($FontFile.Name)': $_"
             }
         }
         
         Write-SuccessMessage "Font registration completed"
     }
     catch {
-        Write-Host "Warning: Could not register fonts with Windows system: $_" -ForegroundColor Yellow
+        Write-WarningMessage "Could not register fonts with Windows system: $_"
         Write-InfoMessage "Fonts are still installed in user directory and should work in most applications"
     }
 }
@@ -92,7 +99,6 @@ try {
     
     # Font list - exact same as bash script
     $FontsList = @(
-        "Agave", "AnonymousPro", "Arimo", "AurulentSansMono", "BigBlueTerminal",
         "0xProto", "3270", "AdwaitaMono", "Agave", "AnonymousPro", "Arimo", "AtkinsonHyperlegibleMono",
         "AurulentSansMono", "BigBlueTerminal", "BitstreamVeraSansMono", "CascadiaCode",
         "CascadiaMono", "CodeNewRoman", "ComicShannsMono", "CommitMono", "Cousine",
@@ -151,9 +157,18 @@ try {
     
     Write-InfoMessage "Starting download $SelectedFont nerd font"
     
+    # Detect operating system
+    $IsWindowsOS = [System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT
+
     # Set up paths
-    $UserFontsPath = Join-Path $env:LOCALAPPDATA "Microsoft\Windows\Fonts"
-    $TempDir = Join-Path $env:TEMP "NerdFonts_$(Get-Random)"
+    if ($IsWindowsOS) {
+        $UserFontsPath = Join-Path $env:LOCALAPPDATA "Microsoft\Windows\Fonts"
+        $TempDir = Join-Path $env:TEMP "NerdFonts_$(Get-Random)"
+    }
+    else {
+        $UserFontsPath = Join-Path $HOME ".local/share/fonts"
+        $TempDir = "/tmp/NerdFonts_$(Get-Random)"
+    }
     $ZipPath = Join-Path $TempDir "$SelectedFont.zip"
     $ExtractPath = Join-Path $TempDir $SelectedFont
     
@@ -177,8 +192,8 @@ try {
     Write-InfoMessage "Downloading from: $DownloadUrl"
     
     try {
-        # Use Invoke-WebRequest with progress
-        $ProgressPreference = 'Continue'
+        # Use Invoke-WebRequest with suppressed progress bar
+        $ProgressPreference = 'SilentlyContinue'
         Invoke-WebRequest -Uri $DownloadUrl -OutFile $ZipPath -UseBasicParsing
         Write-SuccessMessage "Downloaded $SelectedFont.zip"
     }
@@ -226,8 +241,10 @@ try {
         exit 1
     }
     
-    # Try to register fonts with Windows system
-    Register-WindowsFonts -FontsPath $ExtractPath
+    # Try to register fonts with Windows system (Windows only)
+    if ($IsWindowsOS) {
+        Register-WindowsFonts -FontsPath $ExtractPath
+    }
     
     # Clean up temporary files
     Remove-TempFiles -TempDir $TempDir

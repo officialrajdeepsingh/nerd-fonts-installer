@@ -27,7 +27,8 @@ The Nerd Fonts installer provides cross-platform scripts to easily install Nerd 
 - Automatic cleanup of temporary files
 
 ### 🔧 Platform-Specific Installation
-- **Linux/macOS**: Installs to `~/.fonts/` and refreshes font cache
+- **Linux**: Installs to `~/.local/share/fonts/` and refreshes font cache
+- **macOS**: Installs to `~/Library/Fonts/`
 - **Windows**: Installs to `%LOCALAPPDATA%\Microsoft\Windows\Fonts` and registers with system
 
 ### 📦 Font Support
