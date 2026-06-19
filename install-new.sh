@@ -5,6 +5,9 @@
 # MacOS may ignore fonts inside subdirectories of ~/Library/Fonts
 # Modern Linux font dir is ~/.local/share/fonts/ but ~/.fonts is still supported
 # NerdFonts also distributed as tar.xz. Less to download, no unzip dependency. ZIP as fallback
+# non-interactive run: `cat install-new.sh | bash -s -- monoid`
+# interactive run: `cat install-new.sh | bash -s -- interactive` or `cat install-new.sh | bash`
+# Add version pinning as a fallback in case of latest fails?
 
 set -e
 
@@ -103,7 +106,10 @@ Commands:
 If no command is provided, the script runs normally.
 EOF
 }
-
+quit() {
+      printf "Exiting. Have a nice day\n"
+      exit 0
+}
 have() {
   command -v "$1" >/dev/null 2>&1
 }
@@ -166,6 +172,7 @@ detect_font_dir() {
       FONT_DIR="${HOME}/.fonts"
       printf "Unsupported OS: %s\nFonts would be installed in %s\n" \
         "$(uname -s)" "${FONT_DIR}"
+        read -p "Press enter to continue or ctrl+c to exit"
       ;;
   esac
 
@@ -183,7 +190,12 @@ print_font_menu() {
 }
 
 interactive_select_font_to_install() {
-  # Add support of font names, not only ids
+  if ! test -r /dev/tty; then
+    printf "No terminal available. Use: %s <FontName> [FontName...]\n" "$0" >&2
+    exit 1
+  fi
+  detect_font_dir
+
   FONTS_TO_INSTALL=()
   local quit_index=$(( ${#FONTS_LIST[@]} + 1 ))
   local reply
@@ -191,7 +203,7 @@ interactive_select_font_to_install() {
   printf "Select Nerd Fonts to install (press Enter with no input when done):\n"
   print_font_menu
 
-  while read -r -p "Enter a number: " reply; do
+  while read -r -p "Enter a number or press Enter to install: " reply </dev/tty; do
     if [[ -z "$reply" ]]; then
       if (( ${#FONTS_TO_INSTALL[@]} == 0 )); then
         printf "No fonts selected. Please select at least one font.\n"
@@ -199,10 +211,13 @@ interactive_select_font_to_install() {
       fi
       break
     fi
+    if [[ $reply == "q" ]]; then
+      quit
+    fi
+
     if [[ "$reply" =~ ^[0-9]+$ ]] && (( reply >= 1 && reply <= quit_index )); then
       if (( reply == quit_index )); then
-        printf "Exiting. Have a nice day\n"
-        exit 0
+        quit
       fi
       add_font "${FONTS_LIST[$((reply-1))]}"
     else
@@ -212,10 +227,8 @@ interactive_select_font_to_install() {
 }
 
 non_interactive_select_font_to_install() {
-  # support both:
-  # ./install.sh FiraCode,Monoid
-  # ./install.sh FiraCode Monoid
   FONTS_TO_INSTALL=()
+  detect_font_dir
   local token
   for token in $(printf '%s' "$*" | tr ',' ' '); do
     add_font "${token}" || true
@@ -277,16 +290,9 @@ install_font(){
 
   find "${extract_dir}" \( -name "*.ttf" -o -name "*.otf" \) -exec cp {} "${dest_dir}/" \;
 }
-
-main() {
+download_and_install () {
   [ "${ARCHIVER}" = "unzip" ] && FONT_ARCHIVE_EXTENSION="zip"
   detect_font_dir
-
-  if [ "$#" -gt 0 ]; then
-    non_interactive_select_font_to_install "$@"
-  else
-    interactive_select_font_to_install
-  fi
 
   for FONT_NAME in "${FONTS_TO_INSTALL[@]}"; do
       FONT_URL="${FONT_URL_BASE}/${FONT_NAME}.${FONT_ARCHIVE_EXTENSION}"
@@ -300,14 +306,27 @@ main() {
   fi
 }
 
+main() {
+  preflight_check
+  if [ "$#" -gt 0 ]; then
+    non_interactive_select_font_to_install "$@"
+  else
+    interactive_select_font_to_install
+  fi
+  download_and_install
+  exit 0
+}
+
 case "${1:-}" in
   help|-h|--help)
     print_help
     exit 0
     ;;
+  interactive|-i|--interactive)
+    preflight_check
+    interactive_select_font_to_install
+    download_and_install
+    exit 0
+    ;;
 esac
-# if no arguments, run interactive mode
-# if more than 0 arguments, run non-interactive selector first
-
-preflight_check
 main "$@"
