@@ -8,16 +8,9 @@
 # non-interactive run: `cat install-new.sh | bash -s -- monoid`
 # interactive run: `cat install-new.sh | bash -s -- interactive` or `cat install-new.sh | bash`
 
-set -e
+set -euo pipefail
 
-DOWNLOADER=""
-ARCHIVER=""
-MISSING_TOOLS=()
-NERD_FONTS_FALLBACK_VERSION="v3.4.0" # Add fallback in case latest works not so well. Add check if fallback is needed to preflight #TODO
-
-FONT_URL_BASE="https://github.com/ryanoasis/nerd-fonts/releases/latest/download"
-TMP_DIR="$(mktemp -d)"
-trap 'rm -rf "${TMP_DIR}"' EXIT
+trap '[ -n "${TMP_DIR:-}" ] && rm -rf "${TMP_DIR}"' EXIT
 
 main() {
     case "${1:-}" in
@@ -112,6 +105,10 @@ require_one() {
 }
 
 preflight_check() {
+    DOWNLOADER=""
+    ARCHIVER=""
+    MISSING_TOOLS=()
+
     require_one DOWNLOADER wget curl
     require_one ARCHIVER tar unzip
 
@@ -129,6 +126,12 @@ preflight_check() {
     OS_NAME="$(uname -s)"
     detect_font_dir
     set_nerd_fonts_list
+    TMP_DIR="$(mktemp -d)"
+
+    # Add fallback in case latest works not so well #TODO
+    # NERD_FONTS_FALLBACK_VERSION="v3.4.0"
+    NERD_FONTS_VERSION=latest
+    FONT_URL_BASE="https://github.com/ryanoasis/nerd-fonts/releases/${NERD_FONTS_VERSION}/download"
 }
 
 detect_font_dir() {
@@ -246,7 +249,7 @@ install_font(){
     local extract_dir="${TMP_DIR}/${font_name}"
     local dest_dir
     dest_dir="${FONT_DIR}/${font_name}"
-    [ "${OS}" = "Darwin" ] && dest_dir="${FONT_DIR}"
+    [ "${OS_NAME}" = "Darwin" ] && dest_dir="${FONT_DIR}"
 
     mkdir -p "${dest_dir}"
     printf "Installing font %s in %s\n" "${font_name}" "${dest_dir}"
