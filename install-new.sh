@@ -306,27 +306,33 @@ download_and_install () {
   fi
 }
 
-main() {
+main_interactive() {
   preflight_check
-  if [ "$#" -gt 0 ]; then
-    non_interactive_select_font_to_install "$@"
-  else
-    interactive_select_font_to_install
-  fi
+  interactive_select_font_to_install
   download_and_install
-  exit 0
 }
 
-case "${1:-}" in
-  help|-h|--help)
-    print_help
-    exit 0
-    ;;
-  interactive|-i|--interactive)
-    preflight_check
-    interactive_select_font_to_install
-    download_and_install
-    exit 0
-    ;;
-esac
+main_non_interactive() {
+  preflight_check
+  non_interactive_select_font_to_install "$@"
+  download_and_install
+}
+
+main() {
+  case "${1:-}" in
+    help|-h|--help)
+      print_help
+      ;;
+    interactive|-i|--interactive)
+      main_interactive
+      ;;
+    "")
+      main_interactive
+      ;;
+    *)
+      main_non_interactive "$@"
+      ;;
+  esac
+}
+
 main "$@"
