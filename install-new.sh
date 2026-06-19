@@ -15,7 +15,7 @@ trap '[ -n "${TMP_DIR:-}" ] && rm -rf "${TMP_DIR}"' EXIT
 main() {
     case "${1:-}" in
         help|-h|--help|/h|/help)
-            print_help
+            help_show
         ;;
         interactive|-i|--interactive|/i|/interactive)
             main_interactive
@@ -24,12 +24,12 @@ main() {
             main_interactive
         ;;
         *)
-            main_non_interactive "$@"
+            main_noninteractive "$@"
         ;;
     esac
 }
 
-print_help() {
+help_show() {
     cat <<EOF
 Nerd Fonts Installer
 
@@ -69,65 +69,67 @@ quit() {
     exit 0
 }
 
-have() {
+command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
-resolve_font() {
-    local query="${1,,}" entry
-    for entry in "${FONTS_LIST[@]}"; do
-        [[ "${entry,,}" == "${query}" ]] && { printf "%s" "${entry}"; return 0; }
+font_resolve() {
+    local font_query="${1,,}" font_candidate
+    for font_candidate in "${FONT_LIST_AVAILABLE[@]}"; do
+        [[ "${font_candidate,,}" == "${font_query}" ]] && { printf "%s" "${font_candidate}"; return 0; }
     done
     return 1
 }
 
-add_font() {
-    local canonical
-    if canonical="$(resolve_font "$1")"; then
-        FONTS_TO_INSTALL+=("${canonical}")
-        printf "Added: %s\n" "${canonical}"
+font_add() {
+    local font_canonical
+    if font_canonical="$(font_resolve "$1")"; then
+        FONT_LIST_SELECTED+=("${font_canonical}")
+        printf "Added: %s\n" "${font_canonical}"
     else
         printf "Unknown font: %s (skipping)\n" "$1" >&2
         return 1
     fi
 }
 
-require_one() {
-    local outvar="$1"
+tool_require_first() {
+    local out_var_name="$1"
     shift
 
-    for cmd in "$@"; do
-        if have "${cmd}"; then
-            printf -v "${outvar}" "%s" "${cmd}"
+    local tool_candidate
+    for tool_candidate in "$@"; do
+        if command_exists "${tool_candidate}"; then
+            printf -v "${out_var_name}" "%s" "${tool_candidate}"
             return 0
         fi
     done
 
-    MISSING_TOOLS+=("$(IFS='/'; printf "%s" "$*")")
+    TOOL_MISSING_LIST+=("$(IFS='/'; printf "%s" "$*")")
 }
 
 preflight_check() {
-    DOWNLOADER=""
-    ARCHIVER=""
-    MISSING_TOOLS=()
+    TOOL_DOWNLOADER=""
+    TOOL_ARCHIVER=""
+    TOOL_MISSING_LIST=()
 
-    require_one DOWNLOADER wget curl
-    require_one ARCHIVER tar unzip
+    tool_require_first TOOL_DOWNLOADER wget curl
+    tool_require_first TOOL_ARCHIVER tar unzip
 
-    if [ "${#MISSING_TOOLS[@]}" -ne 0 ]; then
+    if [ "${#TOOL_MISSING_LIST[@]}" -ne 0 ]; then
         printf "Missing required tools:\n"
-        for t in "${MISSING_TOOLS[@]}"; do
-            printf " - %s\n" "${t}"
+        local tool_name
+        for tool_name in "${TOOL_MISSING_LIST[@]}"; do
+            printf " - %s\n" "${tool_name}"
         done
         exit 1
     fi
 
     FONT_ARCHIVE_EXTENSION="tar.xz"
-    [ "${ARCHIVER}" = "unzip" ] && FONT_ARCHIVE_EXTENSION="zip"
+    [ "${TOOL_ARCHIVER}" = "unzip" ] && FONT_ARCHIVE_EXTENSION="zip"
 
     OS_NAME="$(uname -s)"
-    detect_font_dir
-    set_nerd_fonts_list
+    font_dir_detect
+    font_list_set
     TMP_DIR="$(mktemp -d)"
 
     # To pin a version, set NERD_FONTS_VERSION=v3.4.0 (or similar).
@@ -139,7 +141,7 @@ preflight_check() {
     fi
 }
 
-detect_font_dir() {
+font_dir_detect() {
     case "${OS_NAME}" in
         Darwin)
             FONT_DIR="${HOME}/Library/Fonts"
@@ -158,145 +160,147 @@ detect_font_dir() {
     mkdir -p "${FONT_DIR}"
 }
 
-print_font_menu() {
-    local i cols=4 width=26
-    for (( i=0; i<${#FONTS_LIST[@]}; i++ )); do
-        printf "%3d) %-*s" "$(( i+1 ))" "${width}" "${FONTS_LIST[$i]}"
-        (( (i+1) % cols == 0 )) && printf "\n"
+font_menu_show() {
+    local font_index menu_cols=4 menu_width=26
+    for (( font_index=0; font_index<${#FONT_LIST_AVAILABLE[@]}; font_index++ )); do
+        printf "%3d) %-*s" "$(( font_index+1 ))" "${menu_width}" "${FONT_LIST_AVAILABLE[${font_index}]}"
+        (( (font_index+1) % menu_cols == 0 )) && printf "\n"
     done
-    (( ${#FONTS_LIST[@]} % cols != 0 )) && printf "\n"
-    printf "%3d) Quit\n" "$(( ${#FONTS_LIST[@]} + 1 ))"
+    (( ${#FONT_LIST_AVAILABLE[@]} % menu_cols != 0 )) && printf "\n"
+    printf "%3d) Quit\n" "$(( ${#FONT_LIST_AVAILABLE[@]} + 1 ))"
 }
 
-interactive_select_font_to_install() {
+font_select_interactive() {
     if ! test -r /dev/tty; then
         printf "No terminal available. Use: %s <FontName> [FontName...]\n" "$0" >&2
         exit 1
     fi
 
-    FONTS_TO_INSTALL=()
-    local quit_index=$(( ${#FONTS_LIST[@]} + 1 ))
-    local reply
+    FONT_LIST_SELECTED=()
+    local menu_quit_index=$(( ${#FONT_LIST_AVAILABLE[@]} + 1 ))
+    local menu_reply
 
     printf "Select Nerd Fonts to install (press Enter with no input when done):\n"
-    print_font_menu
+    font_menu_show
 
-    while read -r -p "Enter a number or press Enter to install: " reply </dev/tty; do
-        if [[ -z "$reply" ]]; then
-            if (( ${#FONTS_TO_INSTALL[@]} == 0 )); then
+    while read -r -p "Enter a number or press Enter to install: " menu_reply </dev/tty; do
+        if [[ -z "${menu_reply}" ]]; then
+            if (( ${#FONT_LIST_SELECTED[@]} == 0 )); then
                 printf "No fonts selected. Please select at least one font.\n"
                 continue
             fi
             break
         fi
-        if [[ $reply == "q" ]]; then
+        if [[ ${menu_reply} == "q" ]]; then
             quit
         fi
 
-        if [[ "$reply" =~ ^[0-9]+$ ]] && (( reply >= 1 && reply <= quit_index )); then
-            if (( reply == quit_index )); then
+        if [[ "${menu_reply}" =~ ^[0-9]+$ ]] && (( menu_reply >= 1 && menu_reply <= menu_quit_index )); then
+            if (( menu_reply == menu_quit_index )); then
                 quit
             fi
-            add_font "${FONTS_LIST[$((reply-1))]}"
+            font_add "${FONT_LIST_AVAILABLE[$((menu_reply-1))]}"
         else
-            printf "Select a valid number between 1 and %d.\n" "${quit_index}"
+            printf "Select a valid number between 1 and %d.\n" "${menu_quit_index}"
         fi
     done
 }
 
-non_interactive_select_font_to_install() {
-    FONTS_TO_INSTALL=()
-    local -a tokens
-    IFS=', ' read -ra tokens <<<"$*"
-    local token
-    for token in "${tokens[@]}"; do
-        add_font "${token}" || true
+font_select_noninteractive() {
+    FONT_LIST_SELECTED=()
+    local -a font_args
+    IFS=', ' read -ra font_args <<<"$*"
+    local font_arg
+    for font_arg in "${font_args[@]}"; do
+        font_add "${font_arg}" || true
     done
-    if (( ${#FONTS_TO_INSTALL[@]} == 0 )); then
+    if (( ${#FONT_LIST_SELECTED[@]} == 0 )); then
         printf "No valid fonts selected. Exiting.\n" >&2
         exit 1
     fi
 }
 
-download_file() {
-    local url="$1"
-    local out="$2"
+file_download() {
+    local file_url="$1"
+    local file_out_path="$2"
 
-    case "$DOWNLOADER" in
-        curl) curl -fsSL -o "$out" "$url" ;;
-        wget) wget -nv -O "$out" "$url" ;;
+    case "${TOOL_DOWNLOADER}" in
+        curl) curl -fsSL -o "${file_out_path}" "${file_url}" ;;
+        wget) wget -nv -O "${file_out_path}" "${file_url}" ;;
     esac
 }
 
-extract_archive() {
-    local archive="$1"
-    local dir="$2"
+archive_extract() {
+    local archive_path="$1"
+    local archive_dest_dir="$2"
 
-    case "$ARCHIVER" in
-        tar) tar -xf "$archive" -C "$dir" ;;
-        unzip) unzip -qq -o "$archive" -d "$dir" ;;
+    case "${TOOL_ARCHIVER}" in
+        tar) tar -xf "${archive_path}" -C "${archive_dest_dir}" ;;
+        unzip) unzip -qq -o "${archive_path}" -d "${archive_dest_dir}" ;;
     esac
 }
 
-download_font() {
+font_download() {
     local font_name="$1"
     local font_url="$2"
 
-    local archive="${TMP_DIR}/${font_name}.${FONT_ARCHIVE_EXTENSION}"
-    local extract_dir="${TMP_DIR}/${font_name}"
+    local font_archive_path="${TMP_DIR}/${font_name}.${FONT_ARCHIVE_EXTENSION}"
+    local font_extract_dir="${TMP_DIR}/${font_name}"
 
-    mkdir -p "$extract_dir"
+    mkdir -p "${font_extract_dir}"
 
-    download_file "$font_url" "$archive"
-    extract_archive "$archive" "$extract_dir"
+    file_download "${font_url}" "${font_archive_path}"
+    archive_extract "${font_archive_path}" "${font_extract_dir}"
 }
 
-install_font(){
+font_install() {
     local font_name="$1"
-    local extract_dir="${TMP_DIR}/${font_name}"
-    local dest_dir
-    dest_dir="${FONT_DIR}/${font_name}"
-    [ "${OS_NAME}" = "Darwin" ] && dest_dir="${FONT_DIR}"
+    local font_extract_dir="${TMP_DIR}/${font_name}"
+    local font_dest_dir
+    font_dest_dir="${FONT_DIR}/${font_name}"
+    [ "${OS_NAME}" = "Darwin" ] && font_dest_dir="${FONT_DIR}"
 
-    mkdir -p "${dest_dir}"
-    printf "Installing font %s in %s\n" "${font_name}" "${dest_dir}"
+    mkdir -p "${font_dest_dir}"
+    printf "Installing font %s in %s\n" "${font_name}" "${font_dest_dir}"
 
-    find "${extract_dir}" \( -name "*.ttf" -o -name "*.otf" \) -exec cp {} "${dest_dir}/" \;
+    find "${font_extract_dir}" \( -name "*.ttf" -o -name "*.otf" \) -exec cp {} "${font_dest_dir}/" \;
 }
-download_and_install () {
-    local failed=0
-    for FONT_NAME in "${FONTS_TO_INSTALL[@]}"; do
-        FONT_URL="${FONT_URL_BASE}/${FONT_NAME}.${FONT_ARCHIVE_EXTENSION}"
-        if ! { download_font "${FONT_NAME}" "${FONT_URL}" && install_font "${FONT_NAME}"; }; then
-            printf "Failed: %s (skipping)\n" "${FONT_NAME}" >&2
-            failed=$(( failed + 1 ))
+
+font_install_all() {
+    local font_failed_count=0
+    local font_name font_url
+    for font_name in "${FONT_LIST_SELECTED[@]}"; do
+        font_url="${FONT_URL_BASE}/${font_name}.${FONT_ARCHIVE_EXTENSION}"
+        if ! { font_download "${font_name}" "${font_url}" && font_install "${font_name}"; }; then
+            printf "Failed: %s (skipping)\n" "${font_name}" >&2
+            font_failed_count=$(( font_failed_count + 1 ))
             continue
         fi
     done
 
-    if have fc-cache; then
+    if command_exists fc-cache; then
         printf "Rebuilding font cache:\n"
         fc-cache -f
     fi
 
-    (( failed > 0 )) && printf "%d font(s) failed to install.\n" "${failed}" >&2
+    (( font_failed_count > 0 )) && printf "%d font(s) failed to install.\n" "${font_failed_count}" >&2
     return 0
 }
 
 main_interactive() {
     preflight_check
-    interactive_select_font_to_install
-    download_and_install
+    font_select_interactive
+    font_install_all
 }
 
-main_non_interactive() {
+main_noninteractive() {
     preflight_check
-    non_interactive_select_font_to_install "$@"
-    download_and_install
+    font_select_noninteractive "$@"
+    font_install_all
 }
 
-set_nerd_fonts_list() {
-    FONTS_LIST=(
+font_list_set() {
+    FONT_LIST_AVAILABLE=(
         "0xProto"
         "3270"
         "AdwaitaMono"
