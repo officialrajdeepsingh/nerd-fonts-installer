@@ -222,6 +222,7 @@ preflight_check() {
 }
 
 font_dir_detect() {
+    FONT_DIR_EXTRA=""
     case "${OS_NAME}" in
         Darwin)
             FONT_DIR="${HOME}/Library/Fonts"
@@ -231,6 +232,7 @@ font_dir_detect() {
         ;;
         CYGWIN*)
             FONT_DIR="$(cygpath -u "${LOCALAPPDATA}")/Microsoft/Windows/Fonts"
+            FONT_DIR_EXTRA="${XDG_DATA_HOME:-${HOME}/.local/share}/fonts"
         ;;
         *)
             FONT_DIR="${HOME}/.fonts"
@@ -240,7 +242,8 @@ font_dir_detect() {
         ;;
     esac
 
-    mkdir -p "${FONT_DIR}"
+    [ -n "${FONT_DIR:-}" ] && mkdir -p "${FONT_DIR}"
+    [ -n "${FONT_DIR_EXTRA:-}" ] && mkdir -p "${FONT_DIR_EXTRA}"
 }
 
 font_menu_show() {
@@ -350,8 +353,14 @@ font_install() {
 
     mkdir -p "${font_dest_dir}"
     log_info "Installing font %s in %s" "${font_name}" "${font_dest_dir}"
-
     find "${font_extract_dir}" \( -name "*.ttf" -o -name "*.otf" \) -exec cp {} "${font_dest_dir}/" \;
+
+    if [ -n "${FONT_DIR_EXTRA:-}" ]; then
+        local font_dest_dir_extra="${FONT_DIR_EXTRA}/${font_name}"
+        mkdir -p "${font_dest_dir_extra}"
+        log_info "Installing font %s in %s" "${font_name}" "${font_dest_dir_extra}"
+        find "${font_extract_dir}" \( -name "*.ttf" -o -name "*.otf" \) -exec cp {} "${font_dest_dir_extra}/" \;
+    fi
 }
 
 font_install_all() {
