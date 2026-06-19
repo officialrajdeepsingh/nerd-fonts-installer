@@ -64,6 +64,18 @@ Notes:
 EOF
 }
 
+main_interactive() {
+    preflight_check
+    font_select_interactive
+    font_install_all
+}
+
+main_noninteractive() {
+    preflight_check
+    font_select_noninteractive "$@"
+    font_install_all
+}
+
 quit() {
     printf "Exiting. Have a nice day\n"
     exit 0
@@ -285,18 +297,6 @@ font_install_all() {
 
     (( font_failed_count > 0 )) && printf "%d font(s) failed to install.\n" "${font_failed_count}" >&2
     return 0
-}
-
-main_interactive() {
-    preflight_check
-    font_select_interactive
-    font_install_all
-}
-
-main_noninteractive() {
-    preflight_check
-    font_select_noninteractive "$@"
-    font_install_all
 }
 
 font_list_set() {
