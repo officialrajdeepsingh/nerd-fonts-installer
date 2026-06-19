@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-# Select the Nerd Font from https://www.nerdfonts.com/font-downloads
+# Nerd Fonts Installer
+# Install Nerd Fonts <https://www.nerdfonts.com/> on Linux and macOS.
+#
+# GitHub: <https://github.com/officialrajdeepsingh/nerd-fonts-installer>
+# Licenced with MIT. Check LICENSE file for details
 
 set -euo pipefail
 
@@ -122,6 +126,13 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+tar_has_xz_support() {
+    # BSD tar (macOS, libarchive) has built-in xz support
+    tar --version 2>&1 | grep -qiE 'bsd|libarchive' && return 0
+    # GNU tar delegates to the xz binary
+    command_exists xz
+}
+
 to_lower() { printf "%s" "$1" | tr '[:upper:]' '[:lower:]'; }
 
 font_resolve() {
@@ -180,8 +191,22 @@ preflight_check() {
         exit 1
     fi
 
+    # tar.xz is preferred, but requires xz support.
+    # BSD tar (macOS/libarchive) has it built-in; GNU tar needs the xz binary.
+    # Fall back to zip/unzip when xz is unavailable.
     FONT_ARCHIVE_EXTENSION="tar.xz"
-    [ "${TOOL_ARCHIVER}" = "unzip" ] && FONT_ARCHIVE_EXTENSION="zip"
+    if [ "${TOOL_ARCHIVER}" = "unzip" ]; then
+        FONT_ARCHIVE_EXTENSION="zip"
+    elif [ "${TOOL_ARCHIVER}" = "tar" ] && ! tar_has_xz_support; then
+        if command_exists unzip; then
+            TOOL_ARCHIVER="unzip"
+            FONT_ARCHIVE_EXTENSION="zip"
+            log_info "xz not available; falling back to unzip"
+        else
+            log_error "tar has no xz support and unzip is not installed. Install xz or unzip."
+            exit 1
+        fi
+    fi
 
     font_dir_detect
     font_list_set
