@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Select the Nerd Font from https://www.nerdfonts.com/font-downloads
 
 set -euo pipefail
