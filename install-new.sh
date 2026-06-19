@@ -101,10 +101,13 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+to_lower() { printf "%s" "$1" | tr '[:upper:]' '[:lower:]'; }
+
 font_resolve() {
-    local font_query="${1,,}" font_candidate
+    local font_query font_candidate
+    font_query="$(to_lower "$1")"
     for font_candidate in "${FONT_LIST_AVAILABLE[@]}"; do
-        [[ "${font_candidate,,}" == "${font_query}" ]] && { printf "%s" "${font_candidate}"; return 0; }
+        [[ "$(to_lower "${font_candidate}")" == "${font_query}" ]] && { printf "%s" "${font_candidate}"; return 0; }
     done
     return 1
 }
@@ -141,7 +144,7 @@ preflight_check() {
     TOOL_MISSING_LIST=()
     FONT_LIST_SELECTED=()
 
-    tool_require_first TOOL_DOWNLOADER wget curl
+    tool_require_first TOOL_DOWNLOADER curl wget
     tool_require_first TOOL_ARCHIVER tar unzip
 
     if [ "${#TOOL_MISSING_LIST[@]}" -ne 0 ]; then
