@@ -59,6 +59,8 @@ Notes:
   - Multiple fonts may be specified as separate arguments or as a
     comma-separated list.
   - If no arguments are provided, interactive mode is started.
+  - Set NERD_FONTS_VERSION to pin a release (default: latest).
+    Example: NERD_FONTS_VERSION=v3.4.0 $0 Monoid
 EOF
 }
 
@@ -101,7 +103,7 @@ require_one() {
         fi
     done
 
-    MISSING_TOOLS+=("$(printf "%s or %s" "$@")")
+    MISSING_TOOLS+=("$(IFS='/'; printf "%s" "$*")")
 }
 
 preflight_check() {
@@ -128,10 +130,13 @@ preflight_check() {
     set_nerd_fonts_list
     TMP_DIR="$(mktemp -d)"
 
-    # Add fallback in case latest works not so well #TODO
-    # NERD_FONTS_FALLBACK_VERSION="v3.4.0"
-    NERD_FONTS_VERSION=latest
-    FONT_URL_BASE="https://github.com/ryanoasis/nerd-fonts/releases/${NERD_FONTS_VERSION}/download"
+    # To pin a version, set NERD_FONTS_VERSION=v3.4.0 (or similar).
+    NERD_FONTS_VERSION="${NERD_FONTS_VERSION:-latest}"
+    if [ "${NERD_FONTS_VERSION}" = "latest" ]; then
+        FONT_URL_BASE="https://github.com/ryanoasis/nerd-fonts/releases/latest/download"
+    else
+        FONT_URL_BASE="https://github.com/ryanoasis/nerd-fonts/releases/download/${NERD_FONTS_VERSION}"
+    fi
 }
 
 detect_font_dir() {
@@ -146,7 +151,7 @@ detect_font_dir() {
             FONT_DIR="${HOME}/.fonts"
             printf "Unsupported OS_NAME: %s\nFonts would be installed in %s\n" \
             "${OS_NAME}" "${FONT_DIR}"
-            read -p "Press enter to continue or ctrl+c to exit"
+            read -r -p "Press enter to continue or ctrl+c to exit" </dev/tty
         ;;
     esac
 
@@ -201,8 +206,10 @@ interactive_select_font_to_install() {
 
 non_interactive_select_font_to_install() {
     FONTS_TO_INSTALL=()
+    local -a tokens
+    IFS=', ' read -ra tokens <<<"$*"
     local token
-    for token in $(printf '%s' "$*" | tr ',' ' '); do
+    for token in "${tokens[@]}"; do
         add_font "${token}" || true
     done
     if (( ${#FONTS_TO_INSTALL[@]} == 0 )); then
@@ -257,16 +264,23 @@ install_font(){
     find "${extract_dir}" \( -name "*.ttf" -o -name "*.otf" \) -exec cp {} "${dest_dir}/" \;
 }
 download_and_install () {
+    local failed=0
     for FONT_NAME in "${FONTS_TO_INSTALL[@]}"; do
         FONT_URL="${FONT_URL_BASE}/${FONT_NAME}.${FONT_ARCHIVE_EXTENSION}"
-        download_font "${FONT_NAME}" "${FONT_URL}"
-        install_font "${FONT_NAME}"
+        if ! { download_font "${FONT_NAME}" "${FONT_URL}" && install_font "${FONT_NAME}"; }; then
+            printf "Failed: %s (skipping)\n" "${FONT_NAME}" >&2
+            failed=$(( failed + 1 ))
+            continue
+        fi
     done
 
     if have fc-cache; then
         printf "Rebuilding font cache:\n"
         fc-cache -f
     fi
+
+    (( failed > 0 )) && printf "%d font(s) failed to install.\n" "${failed}" >&2
+    return 0
 }
 
 main_interactive() {
