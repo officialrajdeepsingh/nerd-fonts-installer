@@ -108,6 +108,25 @@ have() {
   command -v "$1" >/dev/null 2>&1
 }
 
+resolve_font() {
+  local query="${1,,}" entry
+  for entry in "${FONTS_LIST[@]}"; do
+    [[ "${entry,,}" == "${query}" ]] && { printf "%s" "${entry}"; return 0; }
+  done
+  return 1
+}
+
+add_font() {
+  local canonical
+  if canonical="$(resolve_font "$1")"; then
+    FONTS_TO_INSTALL+=("${canonical}")
+    printf "Added: %s\n" "${canonical}"
+  else
+    printf "Unknown font: %s (skipping)\n" "$1" >&2
+    return 1
+  fi
+}
+
 require_one() {
   local outvar="$1"
   shift
@@ -164,6 +183,7 @@ print_font_menu() {
 }
 
 interactive_select_font_to_install() {
+  # Add support of font names, not only ids
   FONTS_TO_INSTALL=()
   local quit_index=$(( ${#FONTS_LIST[@]} + 1 ))
   local reply
@@ -184,8 +204,7 @@ interactive_select_font_to_install() {
         printf "Exiting. Have a nice day\n"
         exit 0
       fi
-      FONTS_TO_INSTALL+=("${FONTS_LIST[$((reply-1))]}")
-      printf "Added: %s\n" "${FONTS_LIST[$((reply-1))]}"
+      add_font "${FONTS_LIST[$((reply-1))]}"
     else
       printf "Select a valid number between 1 and %d.\n" "${quit_index}"
     fi
@@ -196,7 +215,15 @@ non_interactive_select_font_to_install() {
   # support both:
   # ./install.sh FiraCode,Monoid
   # ./install.sh FiraCode Monoid
-  :
+  FONTS_TO_INSTALL=()
+  local token
+  for token in $(printf '%s' "$*" | tr ',' ' '); do
+    add_font "${token}" || true
+  done
+  if (( ${#FONTS_TO_INSTALL[@]} == 0 )); then
+    printf "No valid fonts selected. Exiting.\n" >&2
+    exit 1
+  fi
 }
 
 download_font() {
@@ -254,7 +281,13 @@ install_font(){
 main() {
   [ "${ARCHIVER}" = "unzip" ] && FONT_ARCHIVE_EXTENSION="zip"
   detect_font_dir
-  interactive_select_font_to_install
+
+  if [ "$#" -gt 0 ]; then
+    non_interactive_select_font_to_install "$@"
+  else
+    interactive_select_font_to_install
+  fi
+
   for FONT_NAME in "${FONTS_TO_INSTALL[@]}"; do
       FONT_URL="${FONT_URL_BASE}/${FONT_NAME}.${FONT_ARCHIVE_EXTENSION}"
       download_font "${FONT_NAME}" "${FONT_URL}"
