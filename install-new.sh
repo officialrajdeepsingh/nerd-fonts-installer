@@ -7,14 +7,13 @@
 # NerdFonts also distributed as tar.xz. Less to download, no unzip dependency. ZIP as fallback
 # non-interactive run: `cat install-new.sh | bash -s -- monoid`
 # interactive run: `cat install-new.sh | bash -s -- interactive` or `cat install-new.sh | bash`
-# Add version pinning as a fallback in case of latest fails?
 
 set -e
 
 DOWNLOADER=""
 ARCHIVER=""
 MISSING_TOOLS=()
-
+NERD_FONTS_FALLBACK_VERSION="v3.4.0" # Add fallback in case latest works not so well. Add check if fallback is needed to preflight #TODO
 FONTS_LIST=(
     "0xProto"
     "3270"
@@ -94,16 +93,35 @@ FONT_ARCHIVE_EXTENSION="tar.xz"
 
 
 print_help() {
-  cat <<EOF
+    cat <<EOF
+Nerd Fonts Installer
 
-The Nerd Fonts installer provides cross-platform scripts to easily install Nerd Fonts from the command line. It includes a bash script for Linux and macOS systems, and a PowerShell script for Windows systems.
+Install one or more Nerd Fonts on Linux and macOS.
 
-Usage: $0 [command]
+Usage:
+  $0                    Run in interactive mode
+  $0 interactive        Run in interactive mode
+  $0 <font> [...]       Install one or more fonts non-interactively
+
+Examples:
+  $0
+  $0 interactive
+  $0 Monoid
+  $0 Monoid Hack
+  $0 Monoid,Hack
 
 Commands:
-  help    Show this help message
+  help, -h, --help, /h, /help
+      Show this help message
 
-If no command is provided, the script runs normally.
+  interactive, -i, --interactive, /i, /interactive
+      Start interactive font selection
+
+Notes:
+  - Font names are case-insensitive.
+  - Multiple fonts may be specified as separate arguments or as a
+    comma-separated list.
+  - If no arguments are provided, interactive mode is started.
 EOF
 }
 quit() {
