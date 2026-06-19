@@ -14,83 +14,27 @@ DOWNLOADER=""
 ARCHIVER=""
 MISSING_TOOLS=()
 NERD_FONTS_FALLBACK_VERSION="v3.4.0" # Add fallback in case latest works not so well. Add check if fallback is needed to preflight #TODO
-FONTS_LIST=(
-    "0xProto"
-    "3270"
-    "AdwaitaMono"
-    "Agave"
-    "AnonymousPro"
-    "Arimo"
-    "AtkinsonHyperlegibleMono"
-    "AurulentSansMono"
-    "BigBlueTerminal"
-    "BitstreamVeraSansMono"
-    "CascadiaCode"
-    "CascadiaMono"
-    "CodeNewRoman"
-    "ComicShannsMono"
-    "CommitMono"
-    "Cousine"
-    "D2Coding"
-    "DaddyTimeMono"
-    "DejaVuSansMono"
-    "DepartureMono"
-    "DroidSansMono"
-    "EnvyCodeR"
-    "FantasqueSansMono"
-    "FiraCode"
-    "FiraMono"
-    "GeistMono"
-    "Go-Mono"
-    "Gohu"
-    "Hack"
-    "Hasklig"
-    "HeavyData"
-    "Hermit"
-    "iA-Writer"
-    "IBMPlexMono"
-    "Inconsolata"
-    "InconsolataGo"
-    "InconsolataLGC"
-    "IntelOneMono"
-    "Iosevka"
-    "IosevkaTerm"
-    "IosevkaTermSlab"
-    "JetBrainsMono"
-    "Lekton"
-    "LiberationMono"
-    "Lilex"
-    "MartianMono"
-    "Meslo"
-    "Monaspace"
-    "Monofur"
-    "Monoid"
-    "Mononoki"
-    "MPlus"
-    "NerdFontsSymbolsOnly"
-    "Noto"
-    "OpenDyslexic"
-    "Overpass"
-    "ProFont"
-    "ProggyClean"
-    "Recursive"
-    "RobotoMono"
-    "ShareTechMono"
-    "SourceCodePro"
-    "SpaceMono"
-    "Terminus"
-    "Tinos"
-    "Ubuntu"
-    "UbuntuMono"
-    "UbuntuSans"
-    "VictorMono"
-    "ZedMono"
-)
+
 FONT_URL_BASE="https://github.com/ryanoasis/nerd-fonts/releases/latest/download"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "${TMP_DIR}"' EXIT
-FONT_ARCHIVE_EXTENSION="tar.xz"
 
+main() {
+    case "${1:-}" in
+        help|-h|--help|/h|/help)
+            print_help
+        ;;
+        interactive|-i|--interactive|/i|/interactive)
+            main_interactive
+        ;;
+        "")
+            main_interactive
+        ;;
+        *)
+            main_non_interactive "$@"
+        ;;
+    esac
+}
 
 print_help() {
     cat <<EOF
@@ -124,10 +68,12 @@ Notes:
   - If no arguments are provided, interactive mode is started.
 EOF
 }
+
 quit() {
     printf "Exiting. Have a nice day\n"
     exit 0
 }
+
 have() {
     command -v "$1" >/dev/null 2>&1
 }
@@ -168,6 +114,7 @@ require_one() {
 preflight_check() {
     require_one DOWNLOADER wget curl
     require_one ARCHIVER tar unzip
+
     if [ "${#MISSING_TOOLS[@]}" -ne 0 ]; then
         printf "Missing required tools:\n"
         for t in "${MISSING_TOOLS[@]}"; do
@@ -175,11 +122,17 @@ preflight_check() {
         done
         exit 1
     fi
+
+    FONT_ARCHIVE_EXTENSION="tar.xz"
+    [ "${ARCHIVER}" = "unzip" ] && FONT_ARCHIVE_EXTENSION="zip"
+
+    OS_NAME="$(uname -s)"
     detect_font_dir
+    set_nerd_fonts_list
 }
 
 detect_font_dir() {
-    case "$(uname -s)" in
+    case "${OS_NAME}" in
         Darwin)
             FONT_DIR="${HOME}/Library/Fonts"
         ;;
@@ -188,8 +141,8 @@ detect_font_dir() {
         ;;
         *)
             FONT_DIR="${HOME}/.fonts"
-            printf "Unsupported OS: %s\nFonts would be installed in %s\n" \
-            "$(uname -s)" "${FONT_DIR}"
+            printf "Unsupported OS_NAME: %s\nFonts would be installed in %s\n" \
+            "${OS_NAME}" "${FONT_DIR}"
             read -p "Press enter to continue or ctrl+c to exit"
         ;;
     esac
@@ -284,23 +237,16 @@ download_font() {
 
     mkdir -p "$extract_dir"
 
-    download_file "$font_url" "$archive" || exit 1
-    extract_archive "$archive" "$extract_dir" || exit 1
+    download_file "$font_url" "$archive"
+    extract_archive "$archive" "$extract_dir"
 }
 
 install_font(){
     local font_name="$1"
     local extract_dir="${TMP_DIR}/${font_name}"
     local dest_dir
-
-    case "$(uname -s)" in
-        Darwin)
-            dest_dir="${FONT_DIR}"
-        ;;
-        *)
-            dest_dir="${FONT_DIR}/${font_name}"
-        ;;
-    esac
+    dest_dir="${FONT_DIR}/${font_name}"
+    [ "${OS}" = "Darwin" ] && dest_dir="${FONT_DIR}"
 
     mkdir -p "${dest_dir}"
     printf "Installing font %s in %s\n" "${font_name}" "${dest_dir}"
@@ -308,8 +254,6 @@ install_font(){
     find "${extract_dir}" \( -name "*.ttf" -o -name "*.otf" \) -exec cp {} "${dest_dir}/" \;
 }
 download_and_install () {
-    [ "${ARCHIVER}" = "unzip" ] && FONT_ARCHIVE_EXTENSION="zip"
-
     for FONT_NAME in "${FONTS_TO_INSTALL[@]}"; do
         FONT_URL="${FONT_URL_BASE}/${FONT_NAME}.${FONT_ARCHIVE_EXTENSION}"
         download_font "${FONT_NAME}" "${FONT_URL}"
@@ -334,21 +278,79 @@ main_non_interactive() {
     download_and_install
 }
 
-main() {
-    case "${1:-}" in
-        help|-h|--help|/h|/help)
-            print_help
-        ;;
-        interactive|-i|--interactive|/i|/interactive)
-            main_interactive
-        ;;
-        "")
-            main_interactive
-        ;;
-        *)
-            main_non_interactive "$@"
-        ;;
-    esac
+set_nerd_fonts_list() {
+    FONTS_LIST=(
+        "0xProto"
+        "3270"
+        "AdwaitaMono"
+        "Agave"
+        "AnonymousPro"
+        "Arimo"
+        "AtkinsonHyperlegibleMono"
+        "AurulentSansMono"
+        "BigBlueTerminal"
+        "BitstreamVeraSansMono"
+        "CascadiaCode"
+        "CascadiaMono"
+        "CodeNewRoman"
+        "ComicShannsMono"
+        "CommitMono"
+        "Cousine"
+        "D2Coding"
+        "DaddyTimeMono"
+        "DejaVuSansMono"
+        "DepartureMono"
+        "DroidSansMono"
+        "EnvyCodeR"
+        "FantasqueSansMono"
+        "FiraCode"
+        "FiraMono"
+        "GeistMono"
+        "Go-Mono"
+        "Gohu"
+        "Hack"
+        "Hasklig"
+        "HeavyData"
+        "Hermit"
+        "iA-Writer"
+        "IBMPlexMono"
+        "Inconsolata"
+        "InconsolataGo"
+        "InconsolataLGC"
+        "IntelOneMono"
+        "Iosevka"
+        "IosevkaTerm"
+        "IosevkaTermSlab"
+        "JetBrainsMono"
+        "Lekton"
+        "LiberationMono"
+        "Lilex"
+        "MartianMono"
+        "Meslo"
+        "Monaspace"
+        "Monofur"
+        "Monoid"
+        "Mononoki"
+        "MPlus"
+        "NerdFontsSymbolsOnly"
+        "Noto"
+        "OpenDyslexic"
+        "Overpass"
+        "ProFont"
+        "ProggyClean"
+        "Recursive"
+        "RobotoMono"
+        "ShareTechMono"
+        "SourceCodePro"
+        "SpaceMono"
+        "Terminus"
+        "Tinos"
+        "Ubuntu"
+        "UbuntuMono"
+        "UbuntuSans"
+        "VictorMono"
+        "ZedMono"
+    )
 }
 
 main "$@"
