@@ -320,10 +320,10 @@ main_non_interactive() {
 
 main() {
     case "${1:-}" in
-        help|-h|--help)
+        help|-h|--help|/h|/help)
             print_help
         ;;
-        interactive|-i|--interactive)
+        interactive|-i|--interactive|/i|/interactive)
             main_interactive
         ;;
         "")
