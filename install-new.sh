@@ -41,7 +41,6 @@ main() {
 
 help_show() {
     cat <<EOF
-Nerd Fonts Installer
 
 Install one or more Nerd Fonts on Linux and macOS.
 
@@ -81,9 +80,11 @@ EOF
 
 greeting() {
     log_info "Nerd Fonts Installer"
-    log_info "Install Nerd Fonts on Linux and macOS."
+    log_info "Install Nerd Fonts <https://www.nerdfonts.com/> on Linux and macOS."
     log_info ""
-    log_info "Github: https://github.com/officialrajdeepsingh/nerd-fonts-installer"
+    log_info "GitHub: <https://github.com/officialrajdeepsingh/nerd-fonts-installer>"
+    log_info "---"
+    log_info ""
 }
 
 # shellcheck disable=SC2059
@@ -195,7 +196,7 @@ font_menu_show() {
         (( (font_index+1) % menu_cols == 0 )) && printf "\n"
     done
     (( ${#FONT_LIST_AVAILABLE[@]} % menu_cols != 0 )) && printf "\n"
-    printf "%3d) Quit\n" "$(( ${#FONT_LIST_AVAILABLE[@]} + 1 ))"
+    printf "\n%3d) Quit\n\n" "$(( ${#FONT_LIST_AVAILABLE[@]} + 1 ))"
 }
 
 font_select_interactive() {
@@ -210,7 +211,7 @@ font_select_interactive() {
     log_info "Select Nerd Fonts to install (press Enter with no input when done):"
     font_menu_show
 
-    while read -r -p "${LOG_PREFIX} Enter a number or press Enter to install: " menu_reply </dev/tty; do
+    while read -r -p "${LOG_PREFIX} Enter number or font name, empty to install: " menu_reply </dev/tty; do
         [[ "${menu_reply}" == "q" ]] && quit
 
         if [[ -z "${menu_reply}" ]]; then
@@ -219,7 +220,12 @@ font_select_interactive() {
             continue
         fi
 
-        if ! [[ "${menu_reply}" =~ ^[0-9]+$ ]] || (( menu_reply < 1 || menu_reply > menu_quit_index )); then
+        if ! [[ "${menu_reply}" =~ ^[0-9]+$ ]]; then
+            font_add "${menu_reply}" || true
+            continue
+        fi
+
+        if (( menu_reply < 1 || menu_reply > menu_quit_index )); then
             log_info "Select a valid number between 1 and %d." "${menu_quit_index}"
             continue
         fi
