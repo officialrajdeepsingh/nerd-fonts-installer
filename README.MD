@@ -17,23 +17,28 @@ The Nerd Fonts installer provides cross-platform scripts to easily install Nerd 
 ## Features
 
 ### ✨ Cross-Platform Support
-- **Linux/macOS**: Bash script (`install.sh`) with system-wide font installation
+- **Linux/macOS**: Bash script (`install.sh`) with user-level font installation
+- **Windows (Cygwin)**: Bash script installs to both `%LOCALAPPDATA%\Microsoft\Windows\Fonts` and `~/.local/share/fonts/`
 - **Windows 10/11**: PowerShell script (`install.ps1`) with user-level font installation
 
 ### 🎯 Easy to Use
-- Interactive menu with all 51+ Nerd Fonts
+- Interactive menu with all 70 Nerd Fonts
+- Non-interactive mode for scripting and automation
+- Install multiple fonts in one run
 - Colored output for better user experience
 - Input validation and error handling
 - Automatic cleanup of temporary files
 
 ### 🔧 Platform-Specific Installation
-- **Linux**: Installs to `~/.local/share/fonts/` and refreshes font cache
+- **Linux**: Installs to `~/.local/share/fonts/` (or `$XDG_DATA_HOME/fonts/`) and refreshes font cache
 - **macOS**: Installs to `~/Library/Fonts/`
+- **Windows (Cygwin)**: Installs to both `%LOCALAPPDATA%\Microsoft\Windows\Fonts` and `~/.local/share/fonts/` (or `$XDG_DATA_HOME/fonts/`), and refreshes font cache
 - **Windows**: Installs to `%LOCALAPPDATA%\Microsoft\Windows\Fonts` and registers with system
 
 ### 📦 Font Support
 - Supports both `.ttf` and `.otf` font files
 - Downloads latest versions from GitHub releases
+- Prefers `.tar.xz` archives (smaller); falls back to `.zip` when `xz` is unavailable
 - Handles font extraction and installation automatically
 
 ## Compatibility
@@ -48,20 +53,50 @@ The Windows PowerShell script has been tested on:
 - PowerShell Core 7.5.2
 - PowerShell 5.1 (Windows PowerShell)
 
-### Linux/macOS Support
+### Linux/macOS/Cygwin Support
 - All modern Linux distributions with Bash 3.2+
 - macOS 10.9+ (Mavericks) or later
+- Cygwin on Windows 10/11 (requires `curl` or `wget`, `tar` or `unzip`, `cygpath`)
 
 ## Demo
 ![DEMO](/media/install-nerd-font.gif "install nerd font")
 
 ## Install Nerd fonts
 
-### Linux and macOS (Bash)
-Download or install the Nerd Fonts with the Nerd Fonts Installer script. To install Nerd Fonts, run the following script.
+### Linux, macOS and Cygwin (Bash)
+
+**Interactive mode** — pick fonts from a menu:
 
 ```bash
-bash -c  "$(curl -fsSL https://raw.githubusercontent.com/officialrajdeepsingh/nerd-fonts-installer/main/install.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/officialrajdeepsingh/nerd-fonts-installer/main/install.sh)"
+```
+
+**Non-interactive mode** — install one or more fonts directly:
+
+```bash
+# Single font
+curl -fsSL https://raw.githubusercontent.com/officialrajdeepsingh/nerd-fonts-installer/main/install.sh | bash -s -- Monoid
+
+# Multiple fonts (space-separated or comma-separated)
+curl -fsSL https://raw.githubusercontent.com/officialrajdeepsingh/nerd-fonts-installer/main/install.sh | bash -s -- Monoid Hack JetBrainsMono
+curl -fsSL https://raw.githubusercontent.com/officialrajdeepsingh/nerd-fonts-installer/main/install.sh | bash -s -- Monoid,Hack,JetBrainsMono
+```
+
+**Options:**
+
+| Flag | Env var | Description |
+|---|---|---|
+| `--quiet` / `-q` | `LOG_LEVEL=0` | Suppress informational output |
+| `--color` | `USE_COLOR=1` | Force colored output |
+| `--no-color` | `USE_COLOR=0` | Disable colored output |
+| — | `NERD_FONTS_VERSION=v3.4.0` | Pin a specific release |
+
+```bash
+# Pin a version
+NERD_FONTS_VERSION=v3.4.0 bash install.sh Monoid
+
+# Silent install
+bash install.sh --quiet Monoid
 ```
 
 ### Windows (PowerShell)
