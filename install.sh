@@ -49,6 +49,7 @@ main() {
     preflight_check
     case "${1:-}" in
         interactive|-i|--interactive|/i|/interactive|"") font_select_interactive ;;
+        update|--update|/update|-u|/u) shift; font_select_update "$@" ;;
         *) font_select_noninteractive "$@" ;;
     esac
     font_install_all
@@ -63,6 +64,7 @@ Usage:
   $0                    Run in interactive mode
   $0 interactive        Run in interactive mode
   $0 <font> [...]       Install one or more fonts non-interactively
+  $0 update             Reinstall (update) all installed fonts
 
 Examples:
   $0
@@ -70,6 +72,7 @@ Examples:
   $0 Monoid
   $0 Monoid Hack
   $0 Monoid,Hack
+  $0 update
 
 Commands:
   help, -h, --help, /h, /help
@@ -77,6 +80,11 @@ Commands:
 
   interactive, -i, --interactive, /i, /interactive
       Start interactive font selection
+
+  update, -u, --update, /u, /update
+      Reinstall installed fonts to the latest release. With no arguments,
+      auto-detects installed fonts by scanning the font directory
+      (not supported on macOS — name fonts explicitly there).
 
   --silent, --quiet, -q, -s, /q, /quiet, /s /silent
       Suppress informational output (errors still shown).
@@ -242,8 +250,8 @@ font_dir_detect() {
         ;;
     esac
 
-    [ -n "${FONT_DIR:-}" ] && mkdir -p "${FONT_DIR}"
-    [ -n "${FONT_DIR_EXTRA:-}" ] && mkdir -p "${FONT_DIR_EXTRA}"
+    mkdir -p "${FONT_DIR}"
+    if [ -n "${FONT_DIR_EXTRA:-}" ]; then mkdir -p "${FONT_DIR_EXTRA}"; fi
 }
 
 font_menu_show() {
@@ -290,6 +298,32 @@ font_select_interactive() {
         (( menu_reply == menu_quit_index )) && quit
         font_add "${FONT_LIST_AVAILABLE[$((menu_reply-1))]}"
     done
+}
+
+font_detect_installed() {
+    local entry name
+    for entry in "${FONT_DIR}"/*/; do
+        [ -d "${entry}" ] || continue
+        name="$(basename "${entry%/}")"
+        font_resolve "${name}" >/dev/null 2>&1 && font_add "${name}" || true
+    done
+}
+
+font_select_update() {
+    if (( $# > 0 )); then
+        font_select_noninteractive "$@"
+        return
+    fi
+    if [ "${OS_NAME}" = "Darwin" ]; then
+        log_error "Auto-detect not supported on macOS. Name fonts explicitly: %s update <Font> [...]" "$0"
+        exit 1
+    fi
+    log_info "Detecting installed fonts in %s" "${FONT_DIR}"
+    font_detect_installed
+    if (( ${#FONT_LIST_SELECTED[@]} == 0 )); then
+        log_error "No installed Nerd Fonts found in %s" "${FONT_DIR}"
+        exit 1
+    fi
 }
 
 font_select_noninteractive() {
