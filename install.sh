@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-readonly NERD_FONTS_INSTALLER_VERSION="2.2.0"
+readonly NERD_FONTS_INSTALLER_VERSION="2.3.0"
 readonly LOG_PREFIX="█▓▒░"
 LOG_LEVEL="${LOG_LEVEL:-1}"
 
@@ -51,6 +51,7 @@ main() {
 
     preflight_check
     case "${1:-}" in
+        list|--list|-l|/list|/l) printf "%s\n" "${FONT_LIST_AVAILABLE[@]}"; return ;;
         interactive|-i|--interactive|/i|/interactive|"") font_select_interactive ;;
         update|--update|/update|-u|/u) shift; font_select_update "$@" ;;
         *) font_select_noninteractive "$@" ;;
@@ -88,6 +89,9 @@ Commands:
       Reinstall installed fonts to the latest release. With no arguments,
       auto-detects installed fonts by scanning the font directory
       (not supported on macOS — name fonts explicitly there).
+
+  list, --list, -l, /list, /l
+      Print all available font names, one per line, then exit.
 
   --version, -v, /version, /v
       Print the installer version and exit.
