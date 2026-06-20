@@ -1,0 +1,13 @@
+Set Theme "nord"
+Set Margin 20
+Set Padding 10
+Set MarginFill "#b48ead"
+Set BorderRadius 5
+Set WindowBar ColorfulRight
+Set Shell "bash"
+Set FontSize 10
+Set Width 1000
+Set Height 600
+Set TypingSpeed 80ms
+Set WaitTimeout 30s
+Set Framerate 6

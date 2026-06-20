@@ -7,3 +7,5 @@ Sleep 200ms
 Enter
 Wait
 Sleep 10s
+
+Screenshot media/screenshots/04-batch.png

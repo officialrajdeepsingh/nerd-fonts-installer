@@ -2,11 +2,11 @@
 
 <div style="display:flex;justify-content:center">
 
- <img src="https://img.shields.io/github/license/Ileriayo/markdown-badges?style=for-the-badge" alt="Licence" /> 
- <img src="https://img.shields.io/badge/Debian-D70A53?style=for-the-badge&logo=debian&logoColor=white" alt="Debian" /> 
- <img src="https://img.shields.io/badge/bash_script-%23121011.svg?style=for-the-badge&logo=gnu-bash&logoColor=white" alt="Bash Script" />
- <img src="https://img.shields.io/badge/PowerShell-%235391FE.svg?style=for-the-badge&logo=powershell&logoColor=white" alt="PowerShell" />
- <img src="https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Windows" />
+  <img src="https://img.shields.io/github/license/Ileriayo/markdown-badges?style=for-the-badge" alt="Licence" />
+  <img src="https://img.shields.io/badge/Linux-F5A623?style=for-the-badge&logo=Linux&logoColor=black" alt="Linux" />
+  <img src="https://img.shields.io/badge/osx-black?style=for-the-badge&logo=apple&logoColor=white" alt="Static Badge" />
+  <img src="https://img.shields.io/badge/GNU_bash-yellow?style=for-the-badge&logo=gnubash&logoColor=black" alt="GNU Bash" /> <img src="https://img.shields.io/badge/PowerShell-%235391FE.svg?style=for-the-badge&logo=powershell&logoColor=white" alt="PowerShell" />
+  <img src="https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=Windows&logoColor=white" alt="Windows" />
 
 </div>
 
@@ -59,8 +59,9 @@ The Windows PowerShell script has been tested on:
 - Cygwin on Windows 10/11 (requires `curl` or `wget`, `tar` or `unzip`, `cygpath`)
 
 ## Demo
-![DEMO](/media/install-nerd-font.gif "install nerd font")
+<!-- ![DEMO](./media/install-nerd-font.gif "install nerd font") -->
 
+[![Watch the video](./media/screenshots/00-title.png)](./media/install-nerd-font.mp4)
 ## Install Nerd fonts
 
 ### Linux, macOS and Cygwin (Bash)
@@ -89,7 +90,7 @@ curl -fsSL https://raw.githubusercontent.com/officialrajdeepsingh/nerd-fonts-ins
 | `--quiet` / `-q` | `LOG_LEVEL=0` | Suppress informational output |
 | `--color` | `USE_COLOR=1` | Force colored output |
 | `--no-color` | `USE_COLOR=0` | Disable colored output |
-| — | `NERD_FONTS_VERSION=v3.4.0` | Pin a specific release |
+| `--nerd-fonts-version=v3.4.0` | `NERD_FONTS_VERSION=v3.4.0` | Pin a specific release |
 
 ```bash
 # Pin a version
@@ -97,6 +98,22 @@ NERD_FONTS_VERSION=v3.4.0 bash install.sh Monoid
 
 # Silent install
 bash install.sh --quiet Monoid
+```
+
+### Update installed fonts (Bash)
+
+Re-download and reinstall all currently installed Nerd Fonts to the latest release:
+
+```bash
+# Update all installed fonts (auto-detected from font directory)
+./install.sh update
+```
+
+> **Note:** Auto-detect scans `${FONT_DIR}/<FontName>/` subdirectories. On macOS this feature won't work.
+
+`update` respects `NERD_FONTS_VERSION` to pin a specific release:
+```bash
+NERD_FONTS_VERSION=v3.4.0 ./install.sh update
 ```
 
 ### Windows (PowerShell)

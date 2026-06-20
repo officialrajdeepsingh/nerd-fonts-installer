@@ -20,3 +20,5 @@ Sleep 5s
 Type "ls -lah ${HOME}/.local/share/fonts"
 Enter
 Sleep 5s
+
+Screenshot media/screenshots/02-interactive.png
