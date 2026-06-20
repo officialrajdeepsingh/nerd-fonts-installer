@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-readonly NERD_FONTS_INSTALLER_VERSION="2.4.0"
+readonly NERD_FONTS_INSTALLER_VERSION="2.4.1"
 readonly LOG_PREFIX="█▓▒░"
 LOG_LEVEL="${LOG_LEVEL:-1}"
 
@@ -33,11 +33,11 @@ main() {
     local arg
     for arg in "$@"; do
         case "${arg}" in
-            --version|-v|/version|/v) printf "%s\n" "${NERD_FONTS_INSTALLER_VERSION}"; exit 0 ;;
-            --silent|--quiet|-q|-s|/q|/quiet|/s|/silent) LOG_LEVEL=0 ;;
-            --color|/color) USE_COLOR=1 ;;
-            --no-color|/no-color) USE_COLOR=0 ;;
-            --nerd-fonts-version=*|/nerd-fonts-version=*) NERD_FONTS_VERSION="${arg#*=}" ;;
+            --version|-v|/version|/v|version|v) printf "%s\n" "${NERD_FONTS_INSTALLER_VERSION}"; exit 0 ;;
+            --silent|--quiet|-q|-s|/q|/quiet|/s|/silent|silent|quiet|q|s) LOG_LEVEL=0 ;;
+            --color|/color|color) USE_COLOR=1 ;;
+            --no-color|/no-color|no-color) USE_COLOR=0 ;;
+            --nerd-fonts-version=*|/nerd-fonts-version=*|nerd-fonts-version=*) NERD_FONTS_VERSION="${arg#*=}" ;;
             *) args+=("${arg}") ;;
         esac
     done
@@ -46,14 +46,14 @@ main() {
     setup_colors
     greeting
     case "${1:-}" in
-        help|-h|--help|/h|/help) help_show; return ;;
+        help|-h|--help|/h|/help|h) help_show; return ;;
     esac
 
     preflight_check
     case "${1:-}" in
-        list|--list|-l|/list|/l) printf "%s\n" "${FONT_LIST_AVAILABLE[@]}"; return ;;
-        interactive|-i|--interactive|/i|/interactive|"") font_select_interactive ;;
-        update|--update|/update|-u|/u) shift; font_select_update "$@" ;;
+        list|--list|-l|/list|/l|l) printf "%s\n" "${FONT_LIST_AVAILABLE[@]}"; return ;;
+        interactive|-i|--interactive|/i|/interactive|i|"") font_select_interactive ;;
+        update|--update|/update|-u|/u|u) shift; font_select_update "$@" ;;
         *) font_select_noninteractive "$@" ;;
     esac
     font_install_all
@@ -79,36 +79,37 @@ Examples:
   $0 update
 
 Commands:
-  help, -h, --help, /h, /help
+  help, h, -h, --help, /h, /help
       Show this help message
 
-  interactive, -i, --interactive, /i, /interactive
+  interactive, i, -i, --interactive, /i, /interactive
       Start interactive font selection
 
-  update, -u, --update, /u, /update
+  update, u, -u, --update, /u, /update
       Reinstall installed fonts to the latest release. With no arguments,
       auto-detects installed fonts by scanning the font directory
       (not supported on macOS — name fonts explicitly there).
 
-  list, --list, -l, /list, /l
+  list, l, -l, --list, /l, /list
       Print all available font names, one per line, then exit.
 
-  --version, -v, /version, /v
+  version, v, -v, --version, /v, /version
       Print the installer version and exit.
 
-  --silent, --quiet, -q, -s, /q, /quiet, /s /silent
+  silent, s, -s, --silent, /s, /silent
+  quiet, q, -q, --quiet, /q, /quiet
       Suppress informational output (errors still shown).
       Equivalent to setting LOG_LEVEL=0.
 
-  --color, /color
+  color, --color, /color
       Force colored output even when not writing to a terminal.
       Equivalent to setting USE_COLOR=1.
 
-  --no-color, /no-color
+  no-color, --no-color, /no-color
       Disable colored output.
       Equivalent to setting USE_COLOR=0.
 
-  --nerd-fonts-version=<version>, /nerd-fonts-version=<version>
+  nerd-fonts-version=<version>, --nerd-fonts-version=<version>, /nerd-fonts-version=<version>
       Pin a specific Nerd Fonts release (default: latest).
       Equivalent to setting NERD_FONTS_VERSION=<version>.
       Example: $0 --nerd-fonts-version=v3.4.0 Monoid
