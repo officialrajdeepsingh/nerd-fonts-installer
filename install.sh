@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-readonly NERD_FONTS_INSTALLER_VERSION="2.1.0"
+readonly NERD_FONTS_INSTALLER_VERSION="2.2.0"
 readonly LOG_PREFIX="█▓▒░"
 LOG_LEVEL="${LOG_LEVEL:-1}"
 
@@ -119,7 +119,7 @@ EOF
 }
 
 greeting() {
-    log_info "Nerd Fonts Installer"
+    log_info "Nerd Fonts Installer v${NERD_FONTS_INSTALLER_VERSION}"
     log_info "Install Nerd Fonts <https://www.nerdfonts.com/> on Linux and macOS."
     log_info ""
     log_info "GitHub: <https://github.com/officialrajdeepsingh/nerd-fonts-installer>"
