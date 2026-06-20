@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-readonly NERD_FONTS_INSTALLER_VERSION="2.5.0"
+readonly NERD_FONTS_INSTALLER_VERSION="2.6.0"
 readonly LOG_PREFIX="█▓▒░"
 LOG_LEVEL="${LOG_LEVEL:-1}"
 
@@ -368,13 +368,7 @@ file_download() {
 
     case "${TOOL_DOWNLOADER}" in
         curl) curl -fsSL -o "${file_out_path}" "${file_url}" ;;
-        wget)
-            if (( LOG_LEVEL >= 1 )); then
-                wget -nv -O "${file_out_path}" "${file_url}"
-            else
-                wget -q -O "${file_out_path}" "${file_url}"
-            fi
-            ;;
+        wget) wget -q -O "${file_out_path}" "${file_url}" ;;
     esac
 }
 
