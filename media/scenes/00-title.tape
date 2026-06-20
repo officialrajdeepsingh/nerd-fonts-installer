@@ -1,4 +1,5 @@
-Type@0ms  "reset; printf '\n\n\n\n\n\n\n\n\n\n'; figlet -f lean -w 120 -c 'Nerd Fonts Installer'"
+Type@0ms  "reset; printf '\n\n\n\n\n\n\n\n\n\n\n\n'; figlet -f big -W -c 'Nerd Fonts'; figlet -f big -W -c 'installer'"
 Enter
-Wait
-Sleep 2s
+Sleep 5s
+Screenshot media/screenshots/00-title.png
+Sleep 5s

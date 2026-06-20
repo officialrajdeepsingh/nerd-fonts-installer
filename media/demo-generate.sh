@@ -11,4 +11,6 @@ find "${HOME}/.local/share/fonts" -delete
 mkdir -p media/screenshots/ media/videos/
 vhs media/title.tape
 vhs media/demo.tape
+# vhs media/table.tape
 chown $UID ./media/ -R
+rm media/videos/title.gif

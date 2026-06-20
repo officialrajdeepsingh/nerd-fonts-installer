@@ -13,9 +13,12 @@
 ---
 
 The Nerd Fonts installer provides cross-platform scripts to easily install Nerd Fonts from the command line. It includes a bash script for Linux and macOS systems, and a PowerShell script for Windows systems.
+![screenshot](media/screenshots/02-interactive.png)
 
-## Install Nerd fonts demo
-![DEMO](./media/videos/install-nerd-font.gif "install nerd font demo")
+[Watch installer demo](./media/videos/install-nerd-font.mp4)
+
+
+</details>
 
 ## Features
 

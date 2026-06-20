@@ -6,8 +6,8 @@ Set BorderRadius 5
 Set WindowBar ColorfulRight
 Set Shell "bash"
 Set FontSize 10
-Set Width 1000
-Set Height 600
+Set Width 900
+Set Height 700
 Set TypingSpeed 80ms
 Set WaitTimeout 30s
 Set Framerate 6

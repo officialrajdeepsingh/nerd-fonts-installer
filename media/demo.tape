@@ -1,5 +1,5 @@
-Output media/videos/install-nerd-font.gif
-# Output media/videos/install-nerd-font.mp4
+# Output media/videos/install-nerd-font.gif
+Output media/videos/install-nerd-font.mp4
 # Output media/videos/install-nerd-font.webm
 
 Source media/scenes/utils/_style.tape

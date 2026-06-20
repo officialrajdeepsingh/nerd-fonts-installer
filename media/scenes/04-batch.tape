@@ -5,11 +5,11 @@ Type "./install.sh ibmplexmono,Ubuntu tERMiNuS --quiet"
 Sleep 200ms
 Enter
 Wait
+Screenshot media/screenshots/04-batch.png
 Type "# Fonts were installed in directory:"
 Sleep 2s
 Enter
 Type "ls -lah ${HOME}/.local/share/fonts"
 Enter
 Wait
-Screenshot media/screenshots/04-batch.png
 Sleep 5s

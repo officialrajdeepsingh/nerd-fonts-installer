@@ -31,6 +31,7 @@ Sleep 2s
 Backspace@0s 1000
 Enter
 Wait
+Screenshot media/screenshots/02-interactive.png
 Sleep 5s
 
 Type "# Fonts were installed in directory:"
@@ -40,5 +41,4 @@ Enter
 Type "ls -lah ${HOME}/.local/share/fonts"
 Enter
 Wait
-Screenshot media/screenshots/02-interactive.png
 Sleep 5s
