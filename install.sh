@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-readonly NERD_FONTS_INSTALLER_VERSION="2.0.0"
+readonly NERD_FONTS_INSTALLER_VERSION="2.1.0"
 readonly LOG_PREFIX="█▓▒░"
 LOG_LEVEL="${LOG_LEVEL:-1}"
 
@@ -264,7 +264,12 @@ font_dir_detect() {
 }
 
 font_menu_show() {
-    local font_index menu_cols=4 menu_width=26
+    local font_index menu_width=26
+    local term_cols
+    term_cols=$(tput cols 2>/dev/null || echo 80)
+    local menu_cols=$(( term_cols / (menu_width + 2) ))
+    (( menu_cols < 1 )) && menu_cols=1
+
     for (( font_index=0; font_index<${#FONT_LIST_AVAILABLE[@]}; font_index++ )); do
         printf "%3d) %-*s" "$(( font_index+1 ))" "${menu_width}" "${FONT_LIST_AVAILABLE[${font_index}]}"
         (( (font_index+1) % menu_cols == 0 )) && printf "\n"
