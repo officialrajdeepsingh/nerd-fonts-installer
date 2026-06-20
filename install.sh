@@ -7,6 +7,7 @@
 
 set -euo pipefail
 
+readonly NERD_FONTS_INSTALLER_VERSION="2.0.0"
 readonly LOG_PREFIX="█▓▒░"
 LOG_LEVEL="${LOG_LEVEL:-1}"
 
@@ -32,6 +33,7 @@ main() {
     local arg
     for arg in "$@"; do
         case "${arg}" in
+            --version|-v|/version|/v) printf "%s\n" "${NERD_FONTS_INSTALLER_VERSION}"; exit 0 ;;
             --silent|--quiet|-q|-s|/q|/quiet|/s|/silent) LOG_LEVEL=0 ;;
             --color|/color) USE_COLOR=1 ;;
             --no-color|/no-color) USE_COLOR=0 ;;
@@ -86,6 +88,9 @@ Commands:
       Reinstall installed fonts to the latest release. With no arguments,
       auto-detects installed fonts by scanning the font directory
       (not supported on macOS — name fonts explicitly there).
+
+  --version, -v, /version, /v
+      Print the installer version and exit.
 
   --silent, --quiet, -q, -s, /q, /quiet, /s /silent
       Suppress informational output (errors still shown).
@@ -160,7 +165,7 @@ font_add() {
     local font_canonical
     if font_canonical="$(font_resolve "$1")"; then
         FONT_LIST_SELECTED+=("${font_canonical}")
-        log_info "Added: %s" "${font_canonical}"
+        log_info "Font is added to installation queue: %s" "${font_canonical}"
     else
         log_error "Unknown font: %s (skipping)" "$1"
         return 1
