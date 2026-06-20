@@ -35,6 +35,7 @@ main() {
             --silent|--quiet|-q|-s|/q|/quiet|/s|/silent) LOG_LEVEL=0 ;;
             --color|/color) USE_COLOR=1 ;;
             --no-color|/no-color) USE_COLOR=0 ;;
+            --nerd-fonts-version=*|/nerd-fonts-version=*) NERD_FONTS_VERSION="${arg#*=}" ;;
             *) args+=("${arg}") ;;
         esac
     done
@@ -98,13 +99,16 @@ Commands:
       Disable colored output.
       Equivalent to setting USE_COLOR=0.
 
+  --nerd-fonts-version=<version>, /nerd-fonts-version=<version>
+      Pin a specific Nerd Fonts release (default: latest).
+      Equivalent to setting NERD_FONTS_VERSION=<version>.
+      Example: $0 --nerd-fonts-version=v3.4.0 Monoid
+
 Notes:
   - Font names are case-insensitive.
   - Multiple fonts may be specified as separate arguments or as a
     comma-separated list.
   - If no arguments are provided, interactive mode is started.
-  - Set NERD_FONTS_VERSION to pin a release (default: latest).
-    Example: NERD_FONTS_VERSION=v3.4.0 $0 Monoid
   - Set LOG_LEVEL=0 to suppress informational output (same as --quiet).
 EOF
 }
