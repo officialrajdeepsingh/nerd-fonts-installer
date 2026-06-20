@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-readonly NERD_FONTS_INSTALLER_VERSION="2.4.1"
+readonly NERD_FONTS_INSTALLER_VERSION="2.5.0"
 readonly LOG_PREFIX="█▓▒░"
 LOG_LEVEL="${LOG_LEVEL:-1}"
 
@@ -420,6 +420,15 @@ font_install() {
     fi
 }
 
+font_cache_rebuild() {
+    local font_failed_count="$1"
+    local font_total="$2"
+    if (( font_failed_count < font_total )) && command_exists fc-cache; then
+        log_info "Rebuilding font cache"
+        fc-cache -f
+    fi
+}
+
 font_install_all() {
     local font_failed_count=0
     local font_name font_url
@@ -433,10 +442,7 @@ font_install_all() {
         log_success "Installed: %s" "${font_name}"
     done
 
-    if command_exists fc-cache; then
-        log_info "Rebuilding font cache"
-        fc-cache -f
-    fi
+    font_cache_rebuild "${font_failed_count}" "${#FONT_LIST_SELECTED[@]}"
 
     (( font_failed_count > 0 )) && log_error "%d font(s) failed to install." "${font_failed_count}"
     (( font_failed_count == 0 )) && log_success "All fonts installed successfully."
