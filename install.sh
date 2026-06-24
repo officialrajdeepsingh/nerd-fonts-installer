@@ -278,7 +278,11 @@ preflight_check() {
     TMP_DIR="$(mktemp -d)"
 
     # To pin a version, set NERD_FONTS_VERSION=v3.4.0 (or similar).
+    # If a bare number is given (e.g. 3.4.0), prefix it with v.
     NERD_FONTS_VERSION="${NERD_FONTS_VERSION:-latest}"
+    if [ "${NERD_FONTS_VERSION}" != "latest" ] && [[ "${NERD_FONTS_VERSION}" != v* ]]; then
+        NERD_FONTS_VERSION="v${NERD_FONTS_VERSION}"
+    fi
     if [ "${NERD_FONTS_VERSION}" = "latest" ]; then
         FONT_URL_BASE="https://github.com/ryanoasis/nerd-fonts/releases/latest/download"
     else
