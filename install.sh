@@ -166,13 +166,56 @@ font_resolve() {
     return 1
 }
 
+font_search() {
+    local search="$1"
+    local search_lower matches
+    search_lower="$(to_lower "${search}")"
+    matches=()
+    local font_candidate
+    for font_candidate in "${FONT_LIST_AVAILABLE[@]}"; do
+        if [[ "$(to_lower "${font_candidate}")" == *"${search_lower}"* ]]; then
+            matches+=("${font_candidate}")
+        fi
+    done
+    printf "%s\n" "${matches[@]}"
+}
+
 font_add() {
     local font_canonical
     if font_canonical="$(font_resolve "$1")"; then
-        FONT_LIST_SELECTED+=("${font_canonical}")
-        log_info "Font is added to installation queue: %s" "${font_canonical}"
+        local already_selected=0
+        local f
+        for f in "${FONT_LIST_SELECTED[@]}"; do
+            [[ "${f}" == "${font_canonical}" ]] && { already_selected=1; break; }
+        done
+        if (( already_selected )); then
+            log_info "Already selected: %s" "${font_canonical}"
+        else
+            FONT_LIST_SELECTED+=("${font_canonical}")
+            log_success "Selected: %s (%d total)" "${font_canonical}" "${#FONT_LIST_SELECTED[@]}"
+        fi
     else
-        log_error "Unknown font: %s (skipping)" "$1"
+        log_error "Unknown font: %s" "$1"
+        return 1
+    fi
+}
+
+font_remove() {
+    local font_canonical new_selected
+    if font_canonical="$(font_resolve "$1")"; then
+        new_selected=()
+        local f
+        for f in "${FONT_LIST_SELECTED[@]}"; do
+            [[ "${f}" != "${font_canonical}" ]] && new_selected+=("${f}")
+        done
+        if (( ${#new_selected[@]} == ${#FONT_LIST_SELECTED[@]} )); then
+            log_info "Not selected: %s" "${font_canonical}"
+        else
+            FONT_LIST_SELECTED=("${new_selected[@]}")
+            log_info "Deselected: %s (%d remaining)" "${font_canonical}" "${#FONT_LIST_SELECTED[@]}"
+        fi
+    else
+        log_error "Unknown font: %s" "$1"
         return 1
     fi
 }
@@ -274,13 +317,20 @@ font_menu_show() {
     for font_name in "${FONT_LIST_AVAILABLE[@]}"; do
         (( ${#font_name} > menu_width )) && menu_width=${#font_name}
     done
+    menu_width=$(( menu_width + 2 ))
     local term_cols
     term_cols=$(tput cols 2>/dev/null || echo 80)
     local menu_cols=$(( term_cols / (menu_width + 6) ))
     (( menu_cols < 1 )) && menu_cols=1
 
+    local in_queue
     for (( font_index=0; font_index<${#FONT_LIST_AVAILABLE[@]}; font_index++ )); do
-        printf "%3d) %-*s" "$(( font_index+1 ))" "${menu_width}" "${FONT_LIST_AVAILABLE[${font_index}]}"
+        in_queue=" "
+        local f
+        for f in "${FONT_LIST_SELECTED[@]}"; do
+            [[ "${f}" == "${FONT_LIST_AVAILABLE[${font_index}]}" ]] && { in_queue="*"; break; }
+        done
+        printf "%3d) %s %-*s" "$(( font_index+1 ))" "${in_queue}" "${menu_width}" "${FONT_LIST_AVAILABLE[${font_index}]}"
         (( (font_index+1) % menu_cols == 0 )) && printf "\n"
     done
     (( ${#FONT_LIST_AVAILABLE[@]} % menu_cols != 0 )) && printf "\n"
@@ -296,30 +346,115 @@ font_select_interactive() {
     local menu_quit_index=$(( ${#FONT_LIST_AVAILABLE[@]} + 1 ))
     local menu_reply
 
-    log_info "Select Nerd Fonts to install (press Enter with no input when done):"
+    log_info "Nerd Fonts release: %s" "${NERD_FONTS_VERSION}"
+    log_info "Install directory: %s" "${FONT_DIR}"
+    if [ -n "${FONT_DIR_EXTRA:-}" ]; then
+        log_info "Extra directory: %s" "${FONT_DIR_EXTRA}"
+    fi
+    
+    log_info ""
+    log_info "Select fonts by number, name, or partial name."
+    log_info "  • Ranges: 1-5, 1,3,5"
+    log_info "  • Deselect: -5 or -FiraCode"
+    log_info "  • Show queue: show  |  Redisplay menu: menu  |  Quit: q"
+    log_info ""
+    log_info "Press Enter with empty input to install."
     font_menu_show
 
-    while read -r -p "${LOG_PREFIX} Enter number or font name, empty to install: " menu_reply </dev/tty; do
+    while read -r -p "${LOG_PREFIX} Select font(s): " menu_reply </dev/tty; do
         [[ "${menu_reply}" == "q" ]] && quit
 
         if [[ -z "${menu_reply}" ]]; then
             (( ${#FONT_LIST_SELECTED[@]} > 0 )) && break
-            log_info "No fonts selected. Please select at least one font."
+            log_info "Select at least one font first."
             continue
         fi
 
-        if ! [[ "${menu_reply}" =~ ^[0-9]+$ ]]; then
-            font_add "${menu_reply}" || true
+        if [[ "${menu_reply}" == "show" ]]; then
+            if (( ${#FONT_LIST_SELECTED[@]} == 0 )); then
+                log_info "No fonts selected yet."
+            else
+                log_success "Selected (%d): %s" "${#FONT_LIST_SELECTED[@]}" "${FONT_LIST_SELECTED[*]}"
+            fi
             continue
         fi
 
-        if (( menu_reply < 1 || menu_reply > menu_quit_index )); then
-            log_info "Select a valid number between 1 and %d." "${menu_quit_index}"
+        if [[ "${menu_reply}" == "menu" ]]; then
+            font_menu_show
             continue
         fi
 
-        (( menu_reply == menu_quit_index )) && quit
-        font_add "${FONT_LIST_AVAILABLE[$((menu_reply-1))]}"
+        if [[ "${menu_reply}" =~ ^[0-9,\ \-]+$ ]]; then
+            local -a numbers=()
+            local part range_start range_end i
+            local IFS_old="$IFS"
+            IFS=', '
+            for part in ${menu_reply}; do
+                if [[ "${part}" =~ ^-?[0-9]+$ ]]; then
+                    numbers+=("${part}")
+                fi
+            done
+            IFS="$IFS_old"
+            if [[ "${menu_reply}" == *-* ]]; then
+                numbers=()
+                IFS=', '
+                for part in ${menu_reply}; do
+                    if [[ "${part}" == -* ]]; then
+                        numbers+=("${part}")
+                    elif [[ "${part}" == *-* ]]; then
+                        range_start="${part%-*}"
+                        range_end="${part#*-}"
+                        if [[ "${range_start}" =~ ^[0-9]+$ ]] && [[ "${range_end}" =~ ^[0-9]+$ ]]; then
+                            for (( i=range_start; i<=range_end; i++ )); do
+                                numbers+=("${i}")
+                            done
+                        fi
+                    else
+                        numbers+=("${part}")
+                    fi
+                done
+                IFS="$IFS_old"
+            fi
+            local valid=1
+            for part in "${numbers[@]}"; do
+                if (( part < 1 || part > menu_quit_index )); then
+                    log_info "Invalid number: %s. Use 1-%d." "${part}" "${menu_quit_index}"
+                    valid=0
+                    break
+                fi
+            done
+            (( valid )) || continue
+            for part in "${numbers[@]}"; do
+                (( part == menu_quit_index )) && quit
+                if (( part < 0 )); then
+                    font_remove "${FONT_LIST_AVAILABLE[$(( -part - 1 ))]}" || true
+                else
+                    font_add "${FONT_LIST_AVAILABLE[$(( part - 1 ))]}"
+                fi
+            done
+            continue
+        fi
+
+        local name_part name_parts
+        IFS=', ' read -ra name_parts <<<"${menu_reply}"
+        for name_part in "${name_parts[@]}"; do
+            [[ -z "${name_part}" ]] && continue
+            if [[ "${name_part}" == "-"* ]]; then
+                font_remove "${name_part#-}" || true
+            elif font_resolve "${name_part}" >/dev/null; then
+                font_add "${name_part}"
+            else
+                local matches
+                matches=($(font_search "${name_part}"))
+                if (( ${#matches[@]} == 0 )); then
+                    log_error "No font named or matching: %s" "${name_part}"
+                elif (( ${#matches[@]} == 1 )); then
+                    font_add "${matches[0]}"
+                else
+                    log_info "Did you mean one of: %s" "${matches[*]}"
+                fi
+            fi
+        done
     done
 }
 
@@ -412,6 +547,27 @@ font_install() {
         log_info "Installing font %s in %s" "${font_name}" "${font_dest_dir_extra}"
         find "${font_extract_dir}" \( -name "*.ttf" -o -name "*.otf" \) -exec cp {} "${font_dest_dir_extra}/" \;
     fi
+
+    case "${OS_NAME}" in CYGWIN*)
+        font_register_windows "${font_extract_dir}"
+    ;; esac
+}
+
+font_register_windows() {
+    local font_extract_dir="$1"
+    local win_path
+    win_path="$(cygpath -w "${font_extract_dir}")" || {
+        log_info "Font registration skipped (cygpath not available)"
+        return
+    }
+    log_info "Registering fonts with Windows..."
+    powershell.exe -Command "
+        \$Shell = New-Object -ComObject Shell.Application;
+        \$FontsFolder = \$Shell.Namespace(0x14);
+        Get-ChildItem -Path '${win_path}' -Include '*.ttf','*.otf' -Recurse | ForEach-Object {
+            \$FontsFolder.CopyHere(\$_.FullName, 0x14) | Out-Null;
+        }
+    " 2>/dev/null || log_info "Font registration skipped (requires PowerShell)"
 }
 
 font_cache_rebuild() {
@@ -438,7 +594,7 @@ font_install_all() {
 
     font_cache_rebuild "${font_failed_count}" "${#FONT_LIST_SELECTED[@]}"
 
-    (( font_failed_count > 0 )) && log_error "%d font(s) failed to install." "${font_failed_count}"
+    (( font_failed_count > 0 )) && log_error "%d of %d font(s) failed." "${font_failed_count}" "${#FONT_LIST_SELECTED[@]}"
     (( font_failed_count == 0 )) && log_success "All fonts installed successfully."
     return 0
 }

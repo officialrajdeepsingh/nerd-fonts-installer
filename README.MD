@@ -24,8 +24,7 @@ The Nerd Fonts installer provides cross-platform scripts to easily install Nerd 
 
 ### ✨ Cross-Platform Support
 - **Linux/macOS**: Bash script (`install.sh`) with user-level font installation
-- **Windows (Cygwin)**: Bash script installs to both `%LOCALAPPDATA%\Microsoft\Windows\Fonts` and `~/.local/share/fonts/`
-- **Windows 10/11**: PowerShell script (`install.ps1`) with user-level font installation
+- **Windows (Cygwin/WSL)**: Bash script installs to both `%LOCALAPPDATA%\Microsoft\Windows\Fonts` and `~/.local/share/fonts/`
 
 ### 🎯 Easy to Use
 - Interactive menu with all 70 Nerd Fonts
@@ -116,25 +115,9 @@ Re-download and reinstall all currently installed Nerd Fonts to the latest relea
 NERD_FONTS_VERSION=v3.4.0 ./install.sh update
 ```
 
-### Windows (PowerShell)
-For Windows users, use the PowerShell version of the installer.
+### Windows (Cygwin/WSL)
+On Windows, run the bash script via **Cygwin** or **WSL**. The script auto-detects Cygwin and installs fonts to both `%LOCALAPPDATA%\Microsoft\Windows\Fonts` and `~/.local/share/fonts/`.
 
-**Requirements:**
-- Windows 10 (version 1903 or later) or Windows 11
-- PowerShell 5.1+ or PowerShell Core 6+
-
-```powershell
-# Run in PowerShell (requires PowerShell Core 6+ or Windows PowerShell 5.1+)
-iex "& { $(iwr -useb 'https://raw.githubusercontent.com/officialrajdeepsingh/nerd-fonts-installer/main/install.ps1') }"
+```bash
+bash <(curl -fsSL 'https://raw.githubusercontent.com/officialrajdeepsingh/nerd-fonts-installer/main/install.sh')
 ```
-
-Or download and run locally:
-```powershell
-# Download the script
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/officialrajdeepsingh/nerd-fonts-installer/main/install.ps1' -OutFile 'install.ps1'
-
-# Run the script
-.\install.ps1
-```
-
-After selecting your nerd font, it starts downloading into the system. The PowerShell version installs fonts to the user's local fonts directory and attempts to register them with Windows.
