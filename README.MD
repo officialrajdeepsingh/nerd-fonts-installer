@@ -86,17 +86,30 @@ curl -fsSL https://raw.githubusercontent.com/officialrajdeepsingh/nerd-fonts-ins
 
 | Flag | Env var | Description |
 |---|---|---|
+| `--help` / `-h` | — | Show help message with all commands and examples |
+| `--list` / `-l` | — | Print all available font names, one per line |
 | `--quiet` / `-q` | `LOG_LEVEL=0` | Suppress informational output |
 | `--color` | `USE_COLOR=1` | Force colored output |
 | `--no-color` | `USE_COLOR=0` | Disable colored output |
-| `--nerd-fonts-version=v3.4.0` | `NERD_FONTS_VERSION=v3.4.0` | Pin a specific release |
+| `--nerd-fonts-version=v3.4.0` | `NERD_FONTS_VERSION=v3.4.0` | Pin a specific release (default: latest) |
 
 ```bash
-# Pin a version
-NERD_FONTS_VERSION=v3.4.0 bash install.sh Monoid
+# List all available fonts
+./install.sh --list
+
+# View help
+./install.sh --help
+
+# Pin a specific Nerd Fonts release in non-interactive mode
+NERD_FONTS_VERSION=v3.4.0 ./install.sh Monoid
+./install.sh --nerd-fonts-version=v3.4.0 Monoid
+
+# Pin a specific release in interactive mode
+NERD_FONTS_VERSION=v3.4.0 ./install.sh
+./install.sh --nerd-fonts-version=v3.4.0
 
 # Silent install
-bash install.sh --quiet Monoid
+./install.sh --quiet Monoid
 ```
 
 ### Update installed fonts (Bash)
