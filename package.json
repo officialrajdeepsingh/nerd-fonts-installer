@@ -1,0 +1,47 @@
+{
+  "name": "nerd-fonts-installer",
+  "version": "1.0.0",
+  "description": "Install Nerd Fonts on Linux, macOS, and Windows (Cygwin/WSL)",
+  "bin": {
+    "nerd-fonts-installer": "./cli.js"
+  },
+  "keywords": [
+    "nerd-fonts",
+    "nerd",
+    "fonts",
+    "installer",
+    "nerdfonts",
+    "powerline",
+    "icons",
+    "font",
+    "linux",
+    "macos",
+    "windows",
+    "install-nerd-fonts",
+    "install-nerdfonts",
+    "install-nerd-fonts-linux",
+    "install-nerd-fonts-macos",
+    "install-nerd-fonts-windows",
+    "install-nerd-fonts-cygwin",
+    "install-nerd-fonts-wsl",
+    "install-nerd-fonts-ubuntu",
+    "install-nerd-fonts-debian",
+    "install-nerd-fonts-fedora",
+    "install-nerd-fonts-arch",
+    "install-nerd-fonts-manjaro",
+    "install-nerd-fonts-centos",
+    "install-nerd-fonts-alpine",
+    "install-nerd-fonts-opensuse"
+  ],
+  "author": "officialrajdeepsingh",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/officialrajdeepsingh/nerd-fonts-installer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/officialrajdeepsingh/nerd-fonts-installer/issues"
+  },
+  "homepage": "https://github.com/officialrajdeepsingh/nerd-fonts-installer",
+  "preferUnplugged": true
+}

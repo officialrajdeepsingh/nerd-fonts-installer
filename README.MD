@@ -12,7 +12,7 @@
 
 ---
 
-The Nerd Fonts installer provides cross-platform scripts to easily install Nerd Fonts from the command line. It includes a bash script for Linux and macOS systems, and a PowerShell script for Windows systems.
+The Nerd Fonts installer provides cross-platform scripts to easily install Nerd Fonts from the command line. It's available as a bash script or via npm/yarn/bun/pnpm/deno.
 ![screenshot](media/screenshots/02-interactive.png)
 
 [Watch installer demo](./media/videos/install-nerd-font.mp4)
@@ -133,4 +133,59 @@ On Windows, run the bash script via **Cygwin** or **WSL**. The script auto-detec
 
 ```bash
 bash <(curl -fsSL 'https://raw.githubusercontent.com/officialrajdeepsingh/nerd-fonts-installer/main/install.sh')
+```
+
+## npm / yarn / bun / pnpm / deno
+
+Install and run via any npm-compatible package manager:
+
+```bash
+# npm
+npx nerd-fonts-installer --help
+npx nerd-fonts-installer --list
+npx nerd-fonts-installer
+npx nerd-fonts-installer Hack FiraCode
+npx nerd-fonts-installer --nerd-fonts-version=v3.4.0 Monoid
+npx nerd-fonts-installer --quiet Hack
+
+# yarn
+yarn dlx nerd-fonts-installer --help
+yarn dlx nerd-fonts-installer --list
+yarn dlx nerd-fonts-installer
+yarn dlx nerd-fonts-installer Hack FiraCode
+yarn dlx nerd-fonts-installer --nerd-fonts-version=v3.4.0 Monoid
+
+# bun
+bunx nerd-fonts-installer --help
+bunx nerd-fonts-installer --list
+bunx nerd-fonts-installer
+bunx nerd-fonts-installer Hack FiraCode
+bunx nerd-fonts-installer --nerd-fonts-version=v3.4.0 Monoid
+
+# pnpm
+pnpm dlx nerd-fonts-installer --help
+pnpm dlx nerd-fonts-installer --list
+pnpm dlx nerd-fonts-installer
+pnpm dlx nerd-fonts-installer Hack FiraCode
+pnpm dlx nerd-fonts-installer --nerd-fonts-version=v3.4.0 Monoid
+
+# deno
+deno run --allow-run npm:nerd-fonts-installer -- --help
+deno run --allow-run npm:nerd-fonts-installer -- --list
+deno run --allow-run npm:nerd-fonts-installer
+deno run --allow-run npm:nerd-fonts-installer -- Hack FiraCode
+deno run --allow-run npm:nerd-fonts-installer -- --nerd-fonts-version=v3.4.0 Monoid
+```
+
+Or install globally (all flags and commands work the same):
+
+```bash
+npm install -g nerd-fonts-installer
+
+nerd-fonts-installer --help
+nerd-fonts-installer --list
+nerd-fonts-installer
+nerd-fonts-installer Hack FiraCode
+nerd-fonts-installer --nerd-fonts-version=v3.4.0
+nerd-fonts-installer --quiet Monoid
 ```
