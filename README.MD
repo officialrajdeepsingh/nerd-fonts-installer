@@ -13,12 +13,9 @@
 ---
 
 The Nerd Fonts installer provides cross-platform scripts to easily install Nerd Fonts from the command line. It's available as a bash script or via npm/yarn/bun/pnpm/deno.
-![screenshot](media/screenshots/screenshot.png)
+![screenshot](media/screenshot-dark.png)
 
-![Watch installer demo](media/screenshots/demo.gif)
-
-
-</details>
+![Watch installer demo](media/demo-dark.gif)
 
 ## Features
 
@@ -31,6 +28,8 @@ The Nerd Fonts installer provides cross-platform scripts to easily install Nerd 
 - Non-interactive mode for scripting and automation
 - Install multiple fonts in one run
 - Colored output for better user experience
+- **Installed font detection** — already-installed fonts are highlighted in **green** in the interactive menu
+- `--list` shows fonts currently installed on your system, not the full catalog
 - Input validation and error handling
 - Automatic cleanup of temporary files
 
@@ -87,14 +86,15 @@ curl -fsSL https://raw.githubusercontent.com/officialrajdeepsingh/nerd-fonts-ins
 | Flag | Env var | Description |
 |---|---|---|
 | `--help` / `-h` | — | Show help message with all commands and examples |
-| `--list` / `-l` | — | Print all available font names, one per line |
+| `--list` / `-l` | — | List Nerd Fonts currently installed on your system |
+| `--version` / `-v` | — | Print installer version (`1.0.2`) and exit |
 | `--quiet` / `-q` | `LOG_LEVEL=0` | Suppress informational output |
 | `--color` | `USE_COLOR=1` | Force colored output |
 | `--no-color` | `USE_COLOR=0` | Disable colored output |
-| `--nerd-fonts-version=v3.4.0` | `NERD_FONTS_VERSION=v3.4.0` | Pin a specific release (default: latest) |
+| `--nerd-fonts-version=v3.4.0` | `NERD_FONTS_VERSION=v3.4.0` | Pin a specific Nerd Fonts release (default: latest) |
 
 ```bash
-# List all available fonts
+# List fonts installed on your system
 ./install.sh --list
 
 # View help
@@ -112,7 +112,26 @@ NERD_FONTS_VERSION=v3.4.0 ./install.sh
 ./install.sh --quiet Monoid
 ```
 
-### Update installed fonts (Bash)
+### Versioning
+
+This project uses two separate version concepts:
+
+| Version | Description | Default |
+|---|---|---|
+| **Installer version** (`--version`) | Version of the `nerd-fonts-installer` tool itself | `1.0.2` (from `package.json`) |
+| **Nerd Fonts version** (`--nerd-fonts-version`) | Release of Nerd Fonts to download from GitHub | `latest` |
+
+- The **installer version** is baked into `install.sh` and matches `package.json`. It only changes when the tool itself is updated.
+- The **Nerd Fonts version** defaults to `latest` (always fetches the newest release). Pin a specific version with `--nerd-fonts-version=v3.4.0` or `NERD_FONTS_VERSION=v3.4.0`.
+
+```bash
+# Show installer version
+./install.sh --version
+
+# Pin Nerd Fonts version
+./install.sh --nerd-fonts-version=v3.4.0 Hack
+NERD_FONTS_VERSION=v3.4.0 ./install.sh Hack
+```
 
 Re-download and reinstall all currently installed Nerd Fonts to the latest release:
 
