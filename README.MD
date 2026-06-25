@@ -13,9 +13,9 @@
 ---
 
 The Nerd Fonts installer provides cross-platform scripts to easily install Nerd Fonts from the command line. It's available as a bash script or via npm/yarn/bun/pnpm/deno.
-![screenshot](media/screenshot.png)
+![screenshot](media/screenshots/screenshot.png)
 
-![Watch installer demo](media/demo.gif)
+![Watch installer demo](media/screenshots/demo.gif)
 
 ## Features
 
