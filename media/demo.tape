@@ -56,6 +56,10 @@ Type "menu"
 Enter
 Sleep 2s
 
-Type "q"
+Type "Noto"
 Enter
-Sleep 1s
+Sleep 600ms
+
+Enter
+Sleep 30s
+

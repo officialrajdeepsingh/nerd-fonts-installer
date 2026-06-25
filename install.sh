@@ -460,8 +460,10 @@ font_select_interactive() {
             elif font_resolve "${name_part}" >/dev/null; then
                 font_add "${name_part}"
             else
-                local matches
-                mapfile -t matches < <(font_search "${name_part}")
+                local matches=()
+                while IFS= read -r match; do
+                    matches+=("${match}")
+                done < <(font_search "${name_part}")
                 if (( ${#matches[@]} == 0 )); then
                     log_error "No font named or matching: %s" "${name_part}"
                 elif (( ${#matches[@]} == 1 )); then
