@@ -1,6 +1,6 @@
 {
   "name": "nerd-fonts-installer",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Install Nerd Fonts on Linux, macOS, and Windows (Cygwin/WSL)",
   "bin": {
     "nerd-fonts-installer": "cli"
