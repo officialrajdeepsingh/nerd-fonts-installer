@@ -2,6 +2,7 @@
 
 const { spawn } = require("node:child_process");
 const path = require("node:path");
+const { version } = require("./package.json");
 
 const script = path.join(__dirname, "install.sh");
 const args = process.argv.slice(2);
@@ -9,6 +10,7 @@ const args = process.argv.slice(2);
 function run(bashBin) {
   const child = spawn(bashBin, [script, ...args], {
     stdio: "inherit",
+    env: { ...process.env, NERD_FONTS_INSTALLER_VERSION: version },
   });
 
   child.on("exit", (code) => {
