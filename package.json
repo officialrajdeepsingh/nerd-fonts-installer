@@ -43,5 +43,10 @@
     "url": "https://github.com/officialrajdeepsingh/nerd-fonts-installer/issues"
   },
   "homepage": "https://github.com/officialrajdeepsingh/nerd-fonts-installer",
-  "preferUnplugged": true
+  "preferUnplugged": true,
+  "scripts": {
+    "generate:screenshot": "vhs -q media/screenshot.tape",
+    "generate:demo": "vhs -q media/demo.tape",
+    "screenshot": "npm run generate:screenshot && npm run generate:demo"
+  }
 }

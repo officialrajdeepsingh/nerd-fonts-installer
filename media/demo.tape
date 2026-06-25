@@ -1,15 +1,61 @@
-# Output media/videos/install-nerd-font.gif
-Output media/videos/install-nerd-font.mp4
-# Output media/videos/install-nerd-font.webm
+Output media/screenshots/demo.gif
+Set Theme "tokyonight"
+Set FontFamily "JetBrainsMonoNL Nerd Font Mono"
+Set FontSize 14
+Set Framerate 15
+Set Width 1024
+Set Height 864
+Set Padding 20
+Set Margin 15
+Set MarginFill "#6B50FF"
 
-Source media/scenes/utils/_style.tape
+Type "npx nerd-fonts-installer version"
+Enter
+Sleep 2s
 
-Source media/scenes/01-explore.tape
-Source media/scenes/utils/reset.tape
-Source media/scenes/02-interactive.tape
-Source media/scenes/utils/reset.tape
-Source media/scenes/03-quiet-interactive.tape
-Source media/scenes/utils/reset.tape
-Source media/scenes/04-batch.tape
-Source media/scenes/utils/reset.tape
-Source media/scenes/05-update.tape
+Type "clear"
+Sleep 200ms
+Enter
+Sleep 500ms
+
+Type "npx nerd-fonts-installer --help"
+Enter
+Sleep 3s
+
+Type "clear"
+Sleep 200ms
+Enter
+Sleep 500ms
+
+Type "npx nerd-fonts-installer --list"
+Enter
+Sleep 4s
+
+Type "clear"
+Sleep 200ms
+Enter
+Sleep 500ms
+
+Type "npx nerd-fonts-installer"
+Enter
+Sleep 4s
+
+Type "Hack"
+Enter
+Sleep 600ms
+
+Type "JetBrainsMono"
+Enter
+Sleep 600ms
+
+Type "show"
+Enter
+Sleep 2s
+
+Type "menu"
+Enter
+Sleep 2s
+
+Type "q"
+Enter
+Sleep 1s
