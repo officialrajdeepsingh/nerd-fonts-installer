@@ -58,6 +58,12 @@ quit() {
 # HELPERS
 # =============================================================================
 
+# NOTE ON EMPTY ARRAYS
+# `set -u` is on and bash < 4.4 (macOS ships 3.2) treats "${arr[@]}" on an empty
+# array as an unbound variable, aborting the script. Every expansion of an array
+# that can legitimately be empty therefore uses the ${arr[@]+"${arr[@]}"} idiom,
+# which expands to nothing at all when the array is empty.
+
 command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
@@ -118,7 +124,10 @@ font_search() {
             matches+=("${font_candidate}")
         fi
     done
-    printf "%s\n" "${matches[@]}"
+    # printf with a format but no arguments still emits one line, which callers
+    # would read back as a single empty match. Only print when there is something.
+    (( ${#matches[@]} > 0 )) && printf "%s\n" "${matches[@]}"
+    return 0
 }
 
 # Add a font to the installation queue (FONT_LIST_SELECTED)
@@ -127,7 +136,7 @@ font_add() {
     if font_canonical="$(font_resolve "$1")"; then
         local already_selected=0
         local f
-        for f in "${FONT_LIST_SELECTED[@]}"; do
+        for f in ${FONT_LIST_SELECTED[@]+"${FONT_LIST_SELECTED[@]}"}; do
             [[ "${f}" == "${font_canonical}" ]] && { already_selected=1; break; }
         done
         if (( already_selected )); then
@@ -148,13 +157,13 @@ font_remove() {
     if font_canonical="$(font_resolve "$1")"; then
         new_selected=()
         local f
-        for f in "${FONT_LIST_SELECTED[@]}"; do
+        for f in ${FONT_LIST_SELECTED[@]+"${FONT_LIST_SELECTED[@]}"}; do
             [[ "${f}" != "${font_canonical}" ]] && new_selected+=("${f}")
         done
         if (( ${#new_selected[@]} == ${#FONT_LIST_SELECTED[@]} )); then
             log_info "Not selected: %s" "${font_canonical}"
         else
-            FONT_LIST_SELECTED=("${new_selected[@]}")
+            FONT_LIST_SELECTED=(${new_selected[@]+"${new_selected[@]}"})
             log_info "Deselected: %s (%d remaining)" "${font_canonical}" "${#FONT_LIST_SELECTED[@]}"
         fi
     else
@@ -307,14 +316,15 @@ font_menu_show() {
     local menu_cols=$(( term_cols / (menu_width + 6) ))
     (( menu_cols < 1 )) && menu_cols=1
 
-    local in_queue installed
+    local in_queue installed f
+    local installed_joined=" ${FONT_LIST_INSTALLED[*]+"${FONT_LIST_INSTALLED[*]}"} "
     for (( font_index=0; font_index<${#FONT_LIST_AVAILABLE[@]}; font_index++ )); do
         in_queue=" "
-        for f in "${FONT_LIST_SELECTED[@]}"; do
+        for f in ${FONT_LIST_SELECTED[@]+"${FONT_LIST_SELECTED[@]}"}; do
             [[ "${f}" == "${FONT_LIST_AVAILABLE[${font_index}]}" ]] && { in_queue="*"; break; }
         done
         installed=""
-        [[ " ${FONT_LIST_INSTALLED[*]} " == *" ${FONT_LIST_AVAILABLE[${font_index}]} "* ]] && installed=1
+        [[ "${installed_joined}" == *" ${FONT_LIST_AVAILABLE[${font_index}]} "* ]] && installed=1
         if (( installed )); then
             printf "%3d) %s ${CLR_SUCCESS}%-*s${CLR_RESET}" "$(( font_index+1 ))" "${in_queue}" "${menu_width}" "${FONT_LIST_AVAILABLE[${font_index}]}"
         else
@@ -425,10 +435,22 @@ font_select_interactive() {
                 IFS="$IFS_old"
             fi
 
-            # Validate all numbers are within range
+            # Validate every token before any of it reaches arithmetic. A token like
+            # "-1-5" is not a number: $(( )) would evaluate it as the expression
+            # -(-1-5) = 6 and silently act on the wrong font.
             local valid=1
+            if (( ${#numbers[@]} == 0 )); then
+                log_info "Could not read any font number from: %s" "${menu_reply}"
+                continue
+            fi
+            local abs_part
             for part in "${numbers[@]}"; do
-                local abs_part=$(( part < 0 ? -part : part ))
+                if [[ ! "${part}" =~ ^-?[0-9]+$ ]]; then
+                    log_info "Invalid input: %s. Use a number, a range (1-5), or -N to deselect." "${part}"
+                    valid=0
+                    break
+                fi
+                abs_part=$(( part < 0 ? -part : part ))
                 if (( abs_part < 1 || abs_part > ${#FONT_LIST_AVAILABLE[@]} )); then
                     log_info "Invalid number: %s. Use 1-%d." "${part}" "${#FONT_LIST_AVAILABLE[@]}"
                     valid=0
@@ -451,9 +473,10 @@ font_select_interactive() {
         # --------------------------------------------------------------------
         # Name-based input parsing
         # --------------------------------------------------------------------
-        local name_part name_parts
+        local name_part
+        local -a name_parts=()
         IFS=', ' read -ra name_parts <<<"${menu_reply}"
-        for name_part in "${name_parts[@]}"; do
+        for name_part in ${name_parts[@]+"${name_parts[@]}"}; do
             [[ -z "${name_part}" ]] && continue
             if [[ "${name_part}" == "-"* ]]; then
                 font_remove "${name_part#-}" || true
@@ -482,10 +505,10 @@ font_select_interactive() {
 
 # Parse comma/space-separated font names from CLI arguments
 font_select_noninteractive() {
-    local -a font_args
+    local -a font_args=()
     IFS=', ' read -ra font_args <<<"$*"
     local font_arg
-    for font_arg in "${font_args[@]}"; do
+    for font_arg in ${font_args[@]+"${font_args[@]}"}; do
         font_add "${font_arg}" || true
     done
     if (( ${#FONT_LIST_SELECTED[@]} == 0 )); then
@@ -555,13 +578,26 @@ font_install() {
     font_dest_dir="${FONT_DIR}/${font_name}"
     [ "${OS_NAME}" = "Darwin" ] && font_dest_dir="${FONT_DIR}"
 
+    # Collect the font files up front. `find -exec cp` exits 0 even when it matches
+    # nothing, which would report a font as installed after copying zero files.
+    local -a font_files=()
+    local font_file
+    while IFS= read -r -d '' font_file; do
+        font_files+=("${font_file}")
+    done < <(find "${font_extract_dir}" -type f \( -name "*.ttf" -o -name "*.otf" \) -print0)
+
+    if (( ${#font_files[@]} == 0 )); then
+        log_error "No .ttf or .otf files found in the %s archive" "${font_name}"
+        return 1
+    fi
+
     mkdir -p "${font_dest_dir}"
-    find "${font_extract_dir}" \( -name "*.ttf" -o -name "*.otf" \) -exec cp {} "${font_dest_dir}/" \;
+    cp "${font_files[@]}" "${font_dest_dir}/"
 
     if [ -n "${FONT_DIR_EXTRA:-}" ]; then
         local font_dest_dir_extra="${FONT_DIR_EXTRA}/${font_name}"
         mkdir -p "${font_dest_dir_extra}"
-        find "${font_extract_dir}" \( -name "*.ttf" -o -name "*.otf" \) -exec cp {} "${font_dest_dir_extra}/" \;
+        cp "${font_files[@]}" "${font_dest_dir_extra}/"
     fi
 
     case "${OS_NAME}" in CYGWIN*)
@@ -602,6 +638,11 @@ font_install_all() {
     local font_failed_count=0
     local font_name font_url total="${#FONT_LIST_SELECTED[@]}"
 
+    if (( total == 0 )); then
+        log_error "No fonts selected. Nothing to install."
+        return 1
+    fi
+
     log_info ""
     log_info "Installing %d font(s)..." "${total}"
     log_info ""
@@ -621,10 +662,9 @@ font_install_all() {
     log_info ""
     if (( font_failed_count > 0 )); then
         log_error "%d of %d font(s) failed." "${font_failed_count}" "${total}"
+        return 1
     fi
-    if (( font_failed_count == 0 )); then
-        log_success "All fonts installed successfully."
-    fi
+    log_success "All fonts installed successfully."
     return 0
 }
 
