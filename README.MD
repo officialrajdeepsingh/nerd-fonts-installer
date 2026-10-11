@@ -47,28 +47,33 @@ The Nerd Fonts installer provides cross-platform scripts to easily install Nerd 
 
 ## Compatibility
 
-### Windows Support
+### Windows Support (Cygwin / WSL)
 - **Windows 10**: Version 1903 (May 2019 Update) or later
 - **Windows 11**: All versions supported
-- **PowerShell**: 5.1+ or PowerShell Core 6+
+- **PowerShell**: 5.1+ or PowerShell Core 6+ (used automatically to register fonts into Windows)
 
-The Windows PowerShell script has been tested on:
-- Windows 10 Pro for Workstations (Build 26100)
-- PowerShell Core 7.5.2
-- PowerShell 5.1 (Windows PowerShell)
-
-### Linux/macOS/Cygwin Support
+### Linux/macOS Support
 - All modern Linux distributions with Bash 3.2+
-- macOS 10.9+ (Mavericks) or later
+- macOS 10.9+ (Mavericks) or later (fully compatible with default macOS Bash 3.2)
 - Cygwin on Windows 10/11 (requires `curl` or `wget`, `tar` or `unzip`, `cygpath`)
 
 ### Linux, macOS and Cygwin (Bash)
 
-**Interactive mode** — pick fonts from a menu:
+**Interactive mode** — pick fonts from a dynamic multi-column menu:
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/officialrajdeepsingh/nerd-fonts-installer/main/install.sh)"
 ```
+
+In interactive mode, you can:
+- **Select by number or range:** `5`, `1-5`, or `1,3,5`
+- **Select by font name:** `Hack`, `FiraCode`, or partial name
+- **Deselect fonts:** `-5` or `-FiraCode`
+- **Check queue:** type `show` to see selected fonts
+- **Redisplay menu:** type `menu`
+- **Quit:** type `q` or press `Ctrl+C`
+- **Already-installed fonts** are highlighted in **green** in the menu
+- Press **Enter** with empty input to begin downloading and installing all queued fonts.
 
 **Non-interactive mode** — install one or more fonts directly:
 
@@ -87,7 +92,7 @@ curl -fsSL https://raw.githubusercontent.com/officialrajdeepsingh/nerd-fonts-ins
 |---|---|---|
 | `--help` / `-h` | — | Show help message with all commands and examples |
 | `--list` / `-l` | — | List Nerd Fonts currently installed on your system |
-| `--version` / `-v` | — | Print installer version (`1.0.2`) and exit |
+| `--version` / `-v` | — | Print installer version (`1.0.3`) and exit |
 | `--quiet` / `-q` | `LOG_LEVEL=0` | Suppress informational output |
 | `--color` | `USE_COLOR=1` | Force colored output |
 | `--no-color` | `USE_COLOR=0` | Disable colored output |
@@ -118,10 +123,10 @@ This project uses two separate version concepts:
 
 | Version | Description | Default |
 |---|---|---|
-| **Installer version** (`--version`) | Version of the `nerd-fonts-installer` tool itself | `1.0.2` (from `package.json`) |
+| **Installer version** (`--version`) | Version of the `nerd-fonts-installer` tool itself | `1.0.3` (from `package.json`) |
 | **Nerd Fonts version** (`--nerd-fonts-version`) | Release of Nerd Fonts to download from GitHub | `latest` |
 
-- The **installer version** is baked into `install.sh` and matches `package.json`. It only changes when the tool itself is updated.
+- The **installer version** is read dynamically from `package.json` (or passed via environment). It only changes when the tool itself is updated.
 - The **Nerd Fonts version** defaults to `latest` (always fetches the newest release). Pin a specific version with `--nerd-fonts-version=v3.4.0` or `NERD_FONTS_VERSION=v3.4.0`.
 
 ```bash

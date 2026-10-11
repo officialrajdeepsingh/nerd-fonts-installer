@@ -15,8 +15,8 @@ set -euo pipefail
 # =============================================================================
 
 # Version of this installer (matches package.json). Passed via env by cli wrapper,
-# falls back to reading package.json directly, then to hardcoded default.
-readonly NERD_FONTS_INSTALLER_VERSION="${NERD_FONTS_INSTALLER_VERSION:-$(sed -n 's/.*"version": "\(.*\)".*/\1/p' "$(dirname "$0")/package.json" 2>/dev/null || echo "1.0.3")}"
+# or falls back to reading package.json directly.
+readonly NERD_FONTS_INSTALLER_VERSION="${NERD_FONTS_INSTALLER_VERSION:-$(sed -n 's/.*"version": "\(.*\)".*/\1/p' "$(dirname "$0")/package.json" 2>/dev/null)}"
 
 # Visual prefix prepended to all log messages
 readonly LOG_PREFIX="█▓▒░"
